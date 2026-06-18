@@ -1,0 +1,6 @@
+# Same merge strategy FreePBX/framework uses for generated/version files:
+# keep our side on merge to avoid spurious conflicts on machine-managed files.
+module.xml          merge=ours
+*.po                merge=merge-gettext-po
+*.pot               merge=merge-gettext-po
+*.mo                merge=ours

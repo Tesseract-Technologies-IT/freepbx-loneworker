@@ -13,9 +13,10 @@
 	<description>
 		Multi-operator "lone worker" / man-down safety module. Each operator arms a session from their
 		own extension (701), gets reminders on the speakers, confirms presence (702) or disarms (703).
-		If the timeout elapses with no confirmation, an alarm is announced on the speakers and a cascade
-		of calls is placed to an external Ring Group with take-charge (press 1, then #). Independent
-		sessions per extension, serialised announcements, full event history.
+		If the timeout elapses with no confirmation, an alarm is announced on the speakers and calls are
+		placed simultaneously to the configured responders (internal extensions and external numbers);
+		the first to press 1 takes charge and the other calls stop. Independent sessions per extension,
+		serialised announcements, full event history.
 	</description>
 	<database>
 		<table name="loneworker_sessions">

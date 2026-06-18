@@ -1,0 +1,75 @@
+name: Release
+
+# Sangoma builds and signs FreePBX modules on their own mirror infrastructure
+# (the public framework repo has no Actions). A third-party module published via
+# GitHub has no such mirror, so this workflow is the equivalent: on a version tag
+# it builds the installable .tgz (optionally signed) and publishes it as a Release
+# asset, ready for `fwconsole ma downloadinstall`.
+#
+# Conventions kept from FreePBX/framework:
+#   - the <version> in module.xml is the single source of truth;
+#   - the tag must match it (we use v<version>, e.g. v1.0.0, for clean download URLs;
+#     Sangoma itself tags release/<version> on a branch and does not use GitHub Releases);
+#   - module.sig is built at packaging time, never committed.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write          # required to create the GitHub Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      # Optional: set this repo secret to a GPG private key (ASCII-armored) to
+      # produce a signed module.sig. Leave unset to publish an unsigned module.
+      GPG_KEY: ${{ secrets.LONEWORKER_GPG_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y gettext gnupg
+
+      - name: Read module version and verify it matches the tag
+        id: ver
+        run: |
+          VER="$(grep -oP '(?<=<version>)[^<]+' module.xml | head -1)"
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_NAME}" != "v${VER}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match module.xml <version> ${VER} (expected v${VER})."
+            exit 1
+          fi
+          echo "Building loneworker ${VER} from tag ${GITHUB_REF_NAME}"
+
+      - name: Import signing key (optional)
+        if: ${{ env.GPG_KEY != '' }}
+        run: |
+          echo "$GPG_KEY" | gpg --batch --import
+          KEYID="$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/{print $5; exit}')"
+          echo "GPG_KEYID=$KEYID" >> "$GITHUB_ENV"
+          echo "Will sign with key $KEYID"
+
+      - name: Build the module tarball (sign if a key was imported)
+        run: |
+          chmod +x build.sh
+          if [ -n "${GPG_KEYID:-}" ]; then
+            ./build.sh --sign "$GPG_KEYID"
+          else
+            ./build.sh
+          fi
+          # Stable, version-less copy so a fixed URL always points at the latest:
+          #   .../releases/latest/download/loneworker.tgz
+          cp "loneworker-${{ steps.ver.outputs.version }}.tgz" loneworker.tgz
+
+      - name: Publish GitHub Release with the .tgz assets
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Lone Worker ${{ steps.ver.outputs.version }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            loneworker-${{ steps.ver.outputs.version }}.tgz
+            loneworker.tgz

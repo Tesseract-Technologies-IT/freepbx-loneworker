@@ -115,13 +115,40 @@ is in the confirm subroutine.)
 
 ## Install
 
+**Recommended — install the published Release straight from GitHub:**
 ```
-# copy to /var/www/html/admin/modules/loneworker
+sudo fwconsole ma downloadinstall https://github.com/Tesseract-Technologies-IT/freepbx-loneworker/releases/latest/download/loneworker.tgz
+sudo fwconsole reload
+```
+(or pin a version: `.../releases/download/v<version>/loneworker-<version>.tgz`).
+
+**From a local copy of this repo:**
+```
+# copy this folder to /var/www/html/admin/modules/loneworker
 fwconsole ma installlocal loneworker
 fwconsole reload
 ```
-Then in the GUI → **Lone Worker → Settings**: choose the Paging group, Ring group and the 15
-System Recordings; adjust the timers. The live example updates as you edit.
+Then in the GUI → **Lone Worker → Settings**: choose the Paging group, the alarm responders
+(internal extensions + external numbers) and the System Recordings; adjust the timers. The live
+example and the Readiness panel update as you edit.
+
+See **[Version control, packaging, distribution & signing](#version-control-packaging-distribution--signing)**
+below for the GUI upload, `git clone`, release automation and signing options.
+
+### Updating
+Upgrades use the **same command** — `downloadinstall` upgrades an already-installed module in place
+when the package `<version>` is higher than the installed one:
+```
+sudo fwconsole ma downloadinstall https://github.com/Tesseract-Technologies-IT/freepbx-loneworker/releases/latest/download/loneworker.tgz
+sudo fwconsole reload
+```
+- Your **data is preserved**: kvstore settings and the `loneworker_sessions` / `loneworker_events`
+  tables are kept across upgrades (only `uninstall` removes them); `<database>` schema changes are
+  applied automatically.
+- Each release **must bump `<version>`** in `module.xml` (the Actions workflow enforces tag == version),
+  otherwise FreePBX treats the package as "already installed" and you'd need `--force` to reinstall.
+- There is **no automatic "update available" badge** in Module Admin (we ship via GitHub Releases,
+  not a FreePBX online repo feed): updating is a pull — re-run the command above or re-upload in the GUI.
 
 ### Italian UI
 Generate the locale once (`locale-gen it_IT.UTF-8`), then set the GUI language to Italian
@@ -152,16 +179,42 @@ git remote add origin <your-repo-url>      # e.g. GitHub/GitLab
 git push -u origin master
 ```
 
+### Versioning conventions (same as FreePBX/framework)
+- `<version>` in `module.xml` is the **single source of truth**; bump it and add a
+  `*X.Y.Z* description` line to `<changelog>` for each release.
+- `module.sig` is **built at packaging time, never committed** (it's git-ignored).
+- `.gitattributes` keeps `module.xml`/`*.mo` on `merge=ours` and `*.po` on a gettext merge
+  driver, so generated/version files don't cause merge conflicts — exactly like Sangoma's repo.
+- Sangoma tags `release/X.Y.Z` on a release branch and publishes through their own mirror; a
+  third-party module has no mirror, so we publish via **GitHub Releases** (tag `vX.Y.Z`) instead.
+
 ### Build an installable tarball
 ```
-./build.sh                 # compiles i18n .mo and writes /tmp/loneworker-<version>.tgz
+./build.sh                 # compiles i18n .mo and writes ./loneworker-<version>.tgz
 ```
-The tarball contains a top-level `loneworker/` folder — the exact format FreePBX expects.
+The tarball always contains a top-level `loneworker/` folder (the FreePBX rawname) regardless of
+the checkout folder name — the exact format FreePBX expects.
+
+### Release automation (GitHub Actions)
+`.github/workflows/release.yml` runs on a version tag and does the mirror/build job for us:
+```
+# bump <version> in module.xml + add a changelog line, commit, then:
+git tag v1.0.0
+git push origin v1.0.0
+```
+The workflow verifies the tag matches `module.xml`, runs `build.sh` (signing it if the
+`LONEWORKER_GPG_PRIVATE_KEY` repo secret is set), and creates a Release with two assets:
+`loneworker-<version>.tgz` and a stable `loneworker.tgz`.
 
 ### Install on another FreePBX 17 PBX (any of these)
-1. **GUI**: Admin → Module Admin → *Upload modules* → upload the `.tgz` → Install.
-2. **CLI from a URL** (e.g. a GitHub release asset):
-   `fwconsole ma downloadinstall https://example.com/loneworker-<version>.tgz && fwconsole reload`
+1. **CLI from the Release** (recommended) — stable URL that always points at the latest:
+   ```
+   sudo fwconsole ma downloadinstall https://github.com/Tesseract-Technologies-IT/freepbx-loneworker/releases/latest/download/loneworker.tgz
+   sudo fwconsole reload
+   ```
+   Or pin a specific version:
+   `sudo fwconsole ma downloadinstall https://github.com/Tesseract-Technologies-IT/freepbx-loneworker/releases/download/v<version>/loneworker-<version>.tgz`
+2. **GUI**: Admin → Module Admin → *Upload modules* → upload the `.tgz` → Install.
 3. **git clone / copy**:
    ```
    git clone <repo> /var/www/html/admin/modules/loneworker
