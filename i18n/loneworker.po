@@ -61,6 +61,10 @@ msgid "Announcement"
 msgstr "Annuncio"
 
 #: views/events.php:14
+msgid "Announcement queued"
+msgstr "Annuncio in coda"
+
+#: views/events.php:15
 msgid "Announcement skipped"
 msgstr "Annuncio saltato"
 

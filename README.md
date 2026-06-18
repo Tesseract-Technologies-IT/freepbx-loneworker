@@ -29,8 +29,12 @@ explains every field and shows a **live example** of what will happen based on t
   "Spoken number language" (default Italian).
 - The Settings page has **Test** buttons (test announcement / test alarm call) and an
   **Event history** view (audit log of arm/check-in/alarm/re-call/ack/…).
-- Independent sessions per extension; multiple alarms run in parallel. Announcements are serialised
-  (speaker gate) so they don't overlap on the speakers.
+- Independent sessions per extension; multiple alarms run in parallel. **Spoken announcements are
+  queued** and played back-to-back so they never overlap on the speakers: when two operators alarm
+  at once, both responder cascades start **immediately and in parallel**, and the announcements play
+  one after another as soon as the speakers free up — **alarm announcements first, oldest alarm
+  first**, reminders after. Each announcement, when it finishes, triggers the next via an AGI hook,
+  so the queue drains as fast as the speakers allow (with the per-minute tick as a safety net).
 
 ## Architecture (all native FreePBX)
 

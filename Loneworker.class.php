@@ -264,7 +264,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		$sth = $this->db->prepare('INSERT INTO loneworker_sessions (ext,state,start_ts,next_reminder_ts,deadline_ts,alarm_started_ts) VALUES (?,?,?,?,?,NULL)');
 		$sth->execute([$ext, 'ARMED', $now, $now + (int) $s['reminder_after'], $now + (int) $s['timeout']]);
 		$this->logEvent('ARM', $ext, ['deadline' => $now + (int) $s['timeout']]);
-		$this->announce('arm', $ext, $s);
+		$this->enqueueAnnounce('arm', $ext);
 		return ['result' => 'ok', 'ext' => $ext];
 	}
 
@@ -278,7 +278,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		$sth = $this->db->prepare('UPDATE loneworker_sessions SET start_ts=?, next_reminder_ts=?, deadline_ts=? WHERE ext=? AND state=\'ARMED\'');
 		$sth->execute([$now, $now + (int) $s['reminder_after'], $now + (int) $s['timeout'], $ext]);
 		$this->logEvent('CHECKIN', $ext, ['deadline' => $now + (int) $s['timeout']]);
-		$this->announce('confirm', $ext, $s);
+		$this->enqueueAnnounce('confirm', $ext);
 		return ['result' => 'ok', 'ext' => $ext];
 	}
 
@@ -290,7 +290,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		if (!$row) { $this->logEvent('ERROR', $ext, ['detail' => 'not-active']); return ['result' => 'notactive', 'ext' => $ext]; }
 		$this->deleteSession($ext);
 		$this->logEvent('DISARM', $ext, ['reason' => 'manual']);
-		$this->announce('disarm', $ext, $s);
+		$this->enqueueAnnounce('disarm', $ext);
 		return ['result' => 'ok', 'ext' => $ext];
 	}
 
@@ -305,7 +305,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		$this->deleteSession($ext);
 		$this->logEvent('ACK', $ext, []);
 		$this->logEvent('DISARM', $ext, ['reason' => 'alarm-acked']);
-		$this->announce('ack', $ext, $s);
+		$this->enqueueAnnounce('ack', $ext);
 		return ['result' => 'ok', 'ext' => $ext];
 	}
 
@@ -322,7 +322,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		$this->deleteSession($ext);
 		$this->logEvent('ACK', $ext, []);
 		$this->logEvent('DISARM', $ext, ['reason' => 'alarm-acked']);
-		$this->announce('ack', $ext, $s);
+		$this->enqueueAnnounce('ack', $ext);
 		return ['result' => 'ok', 'ext' => $ext];
 	}
 
@@ -340,8 +340,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		$sth->execute([$now]);
 		foreach ($sth->fetchAll(\PDO::FETCH_ASSOC) as $r) {
 			$ext = $r['ext'];
-			if (!$this->speakerBusy()) { $this->announce('alarm', $ext, $s); }
-			else { $this->logEvent('PAGING_SKIPPED', $ext, ['reason' => 'speaker-busy']); }
+			$this->enqueueAnnounce('alarm', $ext); // queued: plays ASAP, after any older alarm announcement
 			$this->originateAlarm($ext, $s);
 			$u = $this->db->prepare("UPDATE loneworker_sessions SET state='ALARMING', alarm_started_ts=?, next_reminder_ts=? WHERE ext=?");
 			$u->execute([$now, $now + $repeat, $ext]);
@@ -354,7 +353,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		$sth->execute([$now]);
 		foreach ($sth->fetchAll(\PDO::FETCH_ASSOC) as $r) {
 			$ext = $r['ext'];
-			if (!$this->speakerBusy()) { $this->announce('alarm', $ext, $s); }
+			$this->enqueueAnnounce('alarm', $ext);
 			$this->originateAlarm($ext, $s);
 			$u = $this->db->prepare('UPDATE loneworker_sessions SET next_reminder_ts = next_reminder_ts + ? WHERE ext=?');
 			$u->execute([$repeat, $ext]);
@@ -362,18 +361,19 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 			if ($output) { $output->writeln("ALARM_REPEAT $ext"); }
 		}
 
-		// 3) reminders due on ARMED sessions (one per tick, speaker serialisation)
+		// 3) reminders due on ARMED sessions (queued; the queue serialises the speakers)
 		$sth = $this->db->prepare("SELECT * FROM loneworker_sessions WHERE state='ARMED' AND next_reminder_ts <= ? AND deadline_ts > ? ORDER BY next_reminder_ts ASC");
 		$sth->execute([$now, $now]);
 		foreach ($sth->fetchAll(\PDO::FETCH_ASSOC) as $r) {
-			if ($this->speakerBusy()) { $this->logEvent('PAGING_SKIPPED', $r['ext'], ['reason' => 'speaker-busy']); continue; }
-			$this->announce('reminder', $r['ext'], $s);
+			$this->enqueueAnnounce('reminder', $r['ext']); // dedup avoids piling up duplicate reminders
 			$u = $this->db->prepare('UPDATE loneworker_sessions SET next_reminder_ts = next_reminder_ts + ? WHERE ext=?');
 			$u->execute([(int) $s['reminder_interval'], $r['ext']]);
 			$this->logEvent('REMINDER', $r['ext'], []);
 			if ($output) { $output->writeln('REMINDER ' . $r['ext']); }
-			break; // only one reminder announcement per tick
 		}
+
+		// Safety net: if the AGI 'drain' hook ever failed to chain, keep the queue moving.
+		$this->drainAnnounce();
 
 		// 4) event retention (roughly once an hour)
 		if ((int) $s['retention_days'] > 0 && ($now % 3600) < 60) {
@@ -386,14 +386,85 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 
 	// ----------------------------------------------------- Originate / AMI
 
-	/** Dynamic announcement on the speakers via the paging group (bridge trick).
-	 *  $account, if set, tags the channel (accountcode) so a test can be tracked/stopped. */
-	private function announce($msg, $ext, $s, $account = '') {
+	// ------------------------------------- Announcement queue (speakers)
+	// The physical speakers can only play one announcement at a time. Announcements
+	// are queued and played back-to-back: each one, when it finishes, triggers the
+	// next via the AGI 'drain' hook appended to app-loneworker-announce. So when two
+	// operators alarm at once, both responder cascades start immediately (in parallel)
+	// and their spoken announcements are played one after another, as soon as the
+	// speakers free up — alarms first, oldest first — instead of being dropped.
+	// The speaker gate marks "an announcement is in flight"; it is released by
+	// onAnnounceFinished() at the real end of each announcement.
+
+	/** Queue priority for a message type: lower number = played sooner. */
+	private function announcePriority($msg) {
+		switch ($msg) {
+			case 'alarm':    return 0;   // safety-critical: always first
+			case 'ack':      return 1;
+			case 'reminder': return 2;
+			default:         return 3;   // arm / confirm / disarm
+		}
+	}
+
+	private function getAnnounceQueue() {
+		$raw = (string) $this->getConfig('announce_queue');
+		$q = $raw !== '' ? json_decode($raw, true) : [];
+		return is_array($q) ? $q : [];
+	}
+	private function saveAnnounceQueue($q) { $this->setConfig('announce_queue', json_encode(array_values($q))); }
+
+	/** Enqueue an announcement (dedup identical pending msg+ext) and try to play it now. */
+	public function enqueueAnnounce($msg, $ext) {
+		$ext = (string) $ext;
+		$q = $this->getAnnounceQueue();
+		foreach ($q as $it) {
+			if (($it['msg'] ?? '') === $msg && (string) ($it['ext'] ?? '') === $ext) {
+				$this->drainAnnounce(); // already pending: just make sure the queue is moving
+				return true;
+			}
+		}
+		$q[] = ['msg' => $msg, 'ext' => $ext, 'ts' => time()];
+		$this->saveAnnounceQueue($q);
+		$this->logEvent('PAGING_QUEUED', $ext, ['msg' => $msg, 'depth' => count($q)]);
+		$this->drainAnnounce();
+		return true;
+	}
+
+	/** If the speakers are free, pop the highest-priority (then oldest) announcement and play it. */
+	public function drainAnnounce() {
+		if ($this->speakerBusy()) { return false; }   // one is playing; the AGI hook will chain the next
+		$q = $this->getAnnounceQueue();
+		if (empty($q)) { return false; }
+		$best = 0;
+		foreach ($q as $i => $it) {
+			$ip = $this->announcePriority($it['msg'] ?? '');         $its = (int) ($it['ts'] ?? 0);
+			$bp = $this->announcePriority($q[$best]['msg'] ?? '');   $bts = (int) ($q[$best]['ts'] ?? 0);
+			if ($ip < $bp || ($ip === $bp && $its < $bts)) { $best = $i; }
+		}
+		$item = $q[$best];
+		unset($q[$best]);
+		$this->saveAnnounceQueue($q);
+		return $this->announceNow($item['msg'], $item['ext'], $this->getSettings());
+	}
+
+	/** Called by the AGI 'drain' hook at the end of an announcement: release the
+	 *  speakers and immediately start the next queued announcement (back-to-back). */
+	public function onAnnounceFinished() {
+		$this->setConfig('speaker_until', '0'); // release the gate at the real end of the audio
+		return $this->drainAnnounce();
+	}
+
+	/** Low-level: play ONE announcement on the speakers now (does not touch the queue).
+	 *  Dynamic announcement via the paging group (bridge trick). $account, if set, tags the
+	 *  channel (accountcode) so a test can be tracked/stopped. */
+	private function announceNow($msg, $ext, $s, $account = '') {
 		$pg = trim((string) $s['paging_group']);
 		if ($pg === '') { $this->logEvent('ERROR', $ext, ['detail' => 'no-paging-group']); return false; }
 		$ast = $this->freepbx->astman;
 		if (!$ast || !$ast->connected()) { $this->logEvent('ERROR', $ext, ['detail' => 'ami-down']); return false; }
-		$this->setSpeakerGate(12);
+		// Generous fallback ceiling so the once-a-minute tick can't barge in mid-announcement;
+		// the real release happens in onAnnounceFinished() via the AGI 'drain' hook.
+		$this->setSpeakerGate(60);
 		// Exten = message type; CallerID(num) = extension (read by the dialplan via ${CALLERID(num)})
 		$params = [
 			'Channel'  => 'Local/' . $pg . '@from-internal',
@@ -679,7 +750,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	public function testAnnounce() {
 		$s = $this->getSettings();
 		$this->setConfig('speaker_until', '0');
-		$ok = $this->announce('reminder', '000', $s, self::TEST_ACCOUNT);
+		$ok = $this->announceNow('reminder', '000', $s, self::TEST_ACCOUNT);
 		$this->logEvent('TEST', '000', ['what' => 'announce', 'ok' => $ok]);
 		return $ok;
 	}

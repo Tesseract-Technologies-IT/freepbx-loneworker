@@ -14,7 +14,7 @@ function loneworker_rec($id) {
  *  The extension travels in the originated channel's CallerID(num) (robust on Local channels).
  *  If $sayNum is set, that number (e.g. the check-in feature code) is also spoken with SayDigits
  *  after the "post": so changing the code updates the audio automatically. */
-function loneworker_add_ann(&$ext, $ctx, $exten, $pre, $post, $sayNum = '', $lang = '') {
+function loneworker_add_ann(&$ext, $ctx, $exten, $pre, $post, $sayNum = '', $lang = '', $agi = '') {
 	$ext->add($ctx, $exten, '', new ext_answer(''));
 	if ($lang !== '') { $ext->add($ctx, $exten, '', new ext_setvar('CHANNEL(language)', $lang)); }
 	$ext->add($ctx, $exten, '', new ext_wait('1'));
@@ -22,6 +22,8 @@ function loneworker_add_ann(&$ext, $ctx, $exten, $pre, $post, $sayNum = '', $lan
 	$ext->add($ctx, $exten, '', new ext_saydigits('${CALLERID(num)}'));
 	if ($post !== '') { $ext->add($ctx, $exten, '', new ext_playback($post)); }
 	if ($sayNum !== '') { $ext->add($ctx, $exten, '', new ext_saydigits($sayNum)); }
+	// When this announcement finishes, free the speakers and play the next queued one (back-to-back).
+	if ($agi !== '') { $ext->add($ctx, $exten, '', new ext_agi($agi . ',drain')); }
 	$ext->add($ctx, $exten, '', new ext_hangup(''));
 }
 
@@ -62,12 +64,12 @@ function loneworker_get_config($engine) {
 	$ac = 'app-loneworker-announce';
 	$checkin = $actions['checkin']; // check-in number, spoken dynamically
 	$lang = trim((string) ($s['digit_language'] ?? 'it')) ?: 'it';
-	loneworker_add_ann($ext, $ac, 'arm',      loneworker_rec($s['rec_armed_pre']),       loneworker_rec($s['rec_armed_post']),   $checkin, $lang);
-	loneworker_add_ann($ext, $ac, 'confirm',  loneworker_rec($s['rec_confirmed_pre']),     loneworker_rec($s['rec_confirmed_post']),  '',       $lang);
-	loneworker_add_ann($ext, $ac, 'reminder', loneworker_rec($s['rec_reminder_pre']),     loneworker_rec($s['rec_reminder_post']), $checkin, $lang);
-	loneworker_add_ann($ext, $ac, 'alarm',    loneworker_rec($s['rec_alarm_pre']), loneworker_rec($s['rec_alarm_post']), '',   $lang);
-	loneworker_add_ann($ext, $ac, 'ack',      loneworker_rec($s['rec_ack_pre']),      loneworker_rec($s['rec_ack_post']),    '',     $lang);
-	loneworker_add_ann($ext, $ac, 'disarm',   loneworker_rec($s['rec_disarmed_pre']),    '',                                            '',     $lang);
+	loneworker_add_ann($ext, $ac, 'arm',      loneworker_rec($s['rec_armed_pre']),       loneworker_rec($s['rec_armed_post']),   $checkin, $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'confirm',  loneworker_rec($s['rec_confirmed_pre']),     loneworker_rec($s['rec_confirmed_post']),  '',       $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'reminder', loneworker_rec($s['rec_reminder_pre']),     loneworker_rec($s['rec_reminder_post']), $checkin, $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'alarm',    loneworker_rec($s['rec_alarm_pre']), loneworker_rec($s['rec_alarm_post']), '',   $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'ack',      loneworker_rec($s['rec_ack_pre']),      loneworker_rec($s['rec_ack_post']),    '',     $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'disarm',   loneworker_rec($s['rec_disarmed_pre']),    '',                                            '',     $lang, $agi);
 
 	// --- Emergency cascade: ring ALL responders simultaneously --------------
 	// One channel Dials every responder at once. The first one to press 1 in the

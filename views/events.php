@@ -11,6 +11,7 @@ $labels = [
 	'ACK'            => [_('Taken charge'), 'warning'],
 	'CASCADE'        => [_('Calling responders'), 'warning'],
 	'PAGING'         => [_('Announcement'), 'default'],
+	'PAGING_QUEUED'  => [_('Announcement queued'), 'default'],
 	'PAGING_SKIPPED' => [_('Announcement skipped'), 'default'],
 	'TEST'           => [_('Test'), 'primary'],
 	'ERROR'          => [_('Error'), 'danger'],

@@ -31,6 +31,7 @@ try {
 		case 'disarm':  $res = $lw->disarm($ext);  break;
 		case 'ack':     $res = ($ext !== '') ? $lw->ackByExt($ext) : $lw->ackOldest(); break;
 		case 'isactive': $agi->set_variable('LW_ACTIVE', $lw->isAlarming($ext) ? '1' : '0'); $res = ['result' => 'ok', 'ext' => $ext]; break;
+		case 'drain':   $lw->onAnnounceFinished(); $res = ['result' => 'ok', 'ext' => $ext]; break; // end of announcement: play next queued
 		default:        $res = ['result' => 'err', 'ext' => $ext];
 	}
 } catch (\Throwable $e) {
