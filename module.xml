@@ -1,0 +1,48 @@
+<module>
+	<rawname>loneworker</rawname>
+	<repo>local</repo>
+	<name>Lone Worker</name>
+	<version>1.0.0</version>
+	<publisher>Tesseract Technologies</publisher>
+	<license>GPLv3+</license>
+	<licenselink>http://www.gnu.org/licenses/gpl-3.0.txt</licenselink>
+	<changelog>
+		*1.0.0* First release: native multi-operator lone worker monitoring.
+	</changelog>
+	<category>Applications</category>
+	<description>
+		Multi-operator "lone worker" / man-down safety module. Each operator arms a session from their
+		own extension (701), gets reminders on the speakers, confirms presence (702) or disarms (703).
+		If the timeout elapses with no confirmation, an alarm is announced on the speakers and a cascade
+		of calls is placed to an external Ring Group with take-charge (press 1, then #). Independent
+		sessions per extension, serialised announcements, full event history.
+	</description>
+	<database>
+		<table name="loneworker_sessions">
+			<field name="ext" type="string" length="16" primarykey="true" notnull="true"/>
+			<field name="state" type="string" length="16" notnull="true" default="ARMED"/>
+			<field name="start_ts" type="integer" notnull="true" default="0"/>
+			<field name="next_reminder_ts" type="integer" notnull="true" default="0"/>
+			<field name="deadline_ts" type="integer" notnull="true" default="0"/>
+			<field name="alarm_started_ts" type="integer" notnull="false"/>
+		</table>
+		<table name="loneworker_events">
+			<field name="id" type="integer" primarykey="true" autoincrement="true"/>
+			<field name="ts" type="integer" notnull="true" default="0"/>
+			<field name="event" type="string" length="24" notnull="true"/>
+			<field name="ext" type="string" length="16" notnull="false"/>
+			<field name="payload" type="text" notnull="false"/>
+		</table>
+	</database>
+	<depends>
+		<version>17.0.1</version>
+		<module>recordings ge 17.0.1</module>
+		<module>core</module>
+	</depends>
+	<menuitems>
+		<loneworker needsenginedb="yes">Lone Worker</loneworker>
+	</menuitems>
+	<supported>
+		<version>17.0</version>
+	</supported>
+</module>
