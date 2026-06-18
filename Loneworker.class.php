@@ -65,6 +65,8 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		}
 		// install the AGI script into agi-bin (resolved by FreePBX's FastAGI server)
 		$this->installAgi();
+		// install the bundled default Italian announcement clips
+		$this->installDefaultSounds();
 		// run the Job every minute
 		$this->freepbx->Job->addClass('loneworker', 'tick', \FreePBX\modules\Loneworker\Job::class, '* * * * *');
 	}
@@ -77,6 +79,10 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		}
 		try { $this->freepbx->Job->remove('loneworker', 'tick'); } catch (\Throwable $e) {}
 		@unlink('/var/lib/asterisk/agi-bin/loneworker.agi.php');
+		// remove the bundled default clips
+		$dst = $this->soundsDir() . '/loneworker';
+		foreach (glob($dst . '/lw-*') ?: [] as $f) { @unlink($f); }
+		@rmdir($dst);
 		try { $this->db->query('DROP TABLE IF EXISTS loneworker_sessions'); } catch (\Throwable $e) {}
 		try { $this->db->query('DROP TABLE IF EXISTS loneworker_events'); } catch (\Throwable $e) {}
 	}
@@ -89,6 +95,26 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 			@copy($src, $dst);
 			@chmod($dst, 0755);
 		}
+	}
+
+	/** Asterisk sounds directory (from FreePBX config, with a sane fallback). */
+	private function soundsDir() {
+		try { $base = \FreePBX::Config()->get('ASTVARLIBDIR'); } catch (\Throwable $e) { $base = ''; }
+		return rtrim($base ?: '/var/lib/asterisk', '/') . '/sounds';
+	}
+
+	/** Copy the bundled default announcement clips into <sounds>/loneworker so the
+	 *  dialplan can fall back to them when no System Recording is selected. */
+	private function installDefaultSounds() {
+		$src = __DIR__ . '/sounds/it';
+		if (!is_dir($src)) { return; }
+		$dst = $this->soundsDir() . '/loneworker';
+		if (!is_dir($dst)) { @mkdir($dst, 0755, true); }
+		foreach (glob($src . '/*.wav') ?: [] as $f) {
+			@copy($f, $dst . '/' . basename($f));
+			@chmod($dst . '/' . basename($f), 0644);
+		}
+		@exec('chown -R asterisk:asterisk ' . escapeshellarg($dst));
 	}
 
 	public function backup($backup) {}

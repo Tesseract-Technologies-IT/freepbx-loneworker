@@ -1042,3 +1042,7 @@ msgstr "Registrazione — parte 2 (dopo il numero)"
 #: views/settings.php:466
 msgid "The check-in number is spoken automatically here (SayDigits), taken from the Check-in feature code above — do not record it into the audio."
 msgstr "Il numero di conferma viene pronunciato automaticamente qui (SayDigits), preso dal Codice di conferma qui sopra — non registrarlo nell'audio."
+
+#: views/settings.php:407
+msgid "The module ships with default Italian announcements: if you leave a recording unset, the matching bundled clip is played automatically. Pick a System Recording here to override it with your own voice."
+msgstr "Il modulo include annunci italiani predefiniti: se lasci una registrazione vuota, viene riprodotta automaticamente la clip inclusa corrispondente. Scegli qui una registrazione di sistema per sostituirla con la tua voce."

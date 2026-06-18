@@ -404,6 +404,7 @@ lw_num(_('Event retention (days)'), 'retention_days', $s['retention_days'], _('A
 <div role="tabpanel" class="tab-pane" id="lw-tab-ann">
 <h3><?php echo _('Announcements (System Recordings)') ?></h3>
 <p class="help-block"><?php echo _('Each announcement is split into a "before" and an "after" part; between them the system speaks the extension number digit by digit, e.g. "...extension 3-0-1...". Record the messages under Admin → System Recordings, then pick them here.') ?></p>
+<div class="alert alert-info"><i class="fa fa-volume-up"></i> <?php echo _('The module ships with default Italian announcements: if you leave a recording unset, the matching bundled clip is played automatically. Pick a System Recording here to override it with your own voice.') ?></div>
 
 <?php
 // One card per announcement: it cross-references the suggested text with each

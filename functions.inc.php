@@ -10,6 +10,29 @@ function loneworker_rec($id) {
 	return $f ?: '';
 }
 
+/** Asterisk sounds directory (where our bundled default clips are installed). */
+function loneworker_sounds_dir() {
+	try { $base = \FreePBX::Config()->get('ASTVARLIBDIR'); } catch (\Throwable $e) { $base = ''; }
+	return rtrim($base ?: '/var/lib/asterisk', '/') . '/sounds';
+}
+
+/** Playback path of a bundled default clip for an announcement segment (e.g. 'armed-pre'),
+ *  or '' if that default is not installed. Used as a fallback when no System Recording is set. */
+function loneworker_default($seg) {
+	$rel = 'loneworker/lw-' . $seg;
+	$dir = loneworker_sounds_dir();
+	foreach (['wav', 'ulaw', 'sln', 'gsm'] as $ext) {
+		if (is_file($dir . '/' . $rel . '.' . $ext)) { return $rel; }
+	}
+	return '';
+}
+
+/** A System Recording if chosen, otherwise the bundled Italian default for that segment. */
+function loneworker_rec_or_default($id, $seg) {
+	$f = loneworker_rec($id);
+	return $f !== '' ? $f : loneworker_default($seg);
+}
+
 /** Add an announcement block (pre + SayDigits of the extension + post) to an extension.
  *  The extension travels in the originated channel's CallerID(num) (robust on Local channels).
  *  If $sayNum is set, that number (e.g. the check-in feature code) is also spoken with SayDigits
@@ -64,12 +87,12 @@ function loneworker_get_config($engine) {
 	$ac = 'app-loneworker-announce';
 	$checkin = $actions['checkin']; // check-in number, spoken dynamically
 	$lang = trim((string) ($s['digit_language'] ?? 'it')) ?: 'it';
-	loneworker_add_ann($ext, $ac, 'arm',      loneworker_rec($s['rec_armed_pre']),       loneworker_rec($s['rec_armed_post']),   $checkin, $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'confirm',  loneworker_rec($s['rec_confirmed_pre']),     loneworker_rec($s['rec_confirmed_post']),  '',       $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'reminder', loneworker_rec($s['rec_reminder_pre']),     loneworker_rec($s['rec_reminder_post']), $checkin, $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'alarm',    loneworker_rec($s['rec_alarm_pre']), loneworker_rec($s['rec_alarm_post']), '',   $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'ack',      loneworker_rec($s['rec_ack_pre']),      loneworker_rec($s['rec_ack_post']),    '',     $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'disarm',   loneworker_rec($s['rec_disarmed_pre']),    '',                                            '',     $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'arm',      loneworker_rec_or_default($s['rec_armed_pre'], 'armed-pre'),         loneworker_rec_or_default($s['rec_armed_post'], 'armed-post'),         $checkin, $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'confirm',  loneworker_rec_or_default($s['rec_confirmed_pre'], 'confirmed-pre'), loneworker_rec_or_default($s['rec_confirmed_post'], 'confirmed-post'), '',       $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'reminder', loneworker_rec_or_default($s['rec_reminder_pre'], 'reminder-pre'),   loneworker_rec_or_default($s['rec_reminder_post'], 'reminder-post'),   $checkin, $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'alarm',    loneworker_rec_or_default($s['rec_alarm_pre'], 'alarm-pre'),         loneworker_rec_or_default($s['rec_alarm_post'], 'alarm-post'),         '',       $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'ack',      loneworker_rec_or_default($s['rec_ack_pre'], 'ack-pre'),             loneworker_rec_or_default($s['rec_ack_post'], 'ack-post'),             '',       $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'disarm',   loneworker_rec_or_default($s['rec_disarmed_pre'], 'disarmed-pre'),   '',                                                                   '',       $lang, $agi);
 
 	// --- Emergency cascade: ring ALL responders simultaneously --------------
 	// One channel Dials every responder at once. The first one to press 1 in the
@@ -113,8 +136,8 @@ function loneworker_get_config($engine) {
 	// Confirmation routine on each ANSWERED responder: up to 3 prompts; press 1 = take charge
 	// (AGI ack + Return → wins the Dial). If no confirm, hang up so the cascade moves on.
 	$cf    = 'app-loneworker-confirm';
-	$cpre  = loneworker_rec($s['rec_call_pre']);
-	$cpost = loneworker_rec($s['rec_call_post']);
+	$cpre  = loneworker_rec_or_default($s['rec_call_pre'], 'call-pre');
+	$cpost = loneworker_rec_or_default($s['rec_call_post'], 'call-post');
 	$ckey  = preg_match('/^[0-9*]$/', (string) ($s['confirm_key'] ?? '1')) ? (string) $s['confirm_key'] : '1'; // key to take charge
 	$ctmo  = max(3, (int) ($s['confirm_timeout'] ?? 15)); // seconds to wait for the key on each prompt
 	$ext->add($cf, 's', '', new ext_answer(''));
