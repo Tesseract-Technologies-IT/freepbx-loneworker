@@ -9,6 +9,7 @@ $labels = [
 	'ALARM'          => [_('Alarm'), 'danger'],
 	'ALARM_REPEAT'   => [_('Alarm re-call'), 'danger'],
 	'ACK'            => [_('Taken charge'), 'warning'],
+	'ACK_HOLD'       => [_('Taken charge (held)'), 'warning'],
 	'CASCADE'        => [_('Calling responders'), 'warning'],
 	'PAGING'         => [_('Announcement'), 'default'],
 	'PAGING_QUEUED'  => [_('Announcement queued'), 'default'],

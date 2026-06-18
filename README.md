@@ -19,12 +19,20 @@ explains every field and shows a **live example** of what will happen based on t
 - Reminders on the speakers at `reminder_after`, then every `reminder_interval`, until the deadline.
 - On `timeout`: "alarm" announcement on the speakers + **all configured responders are called at
   the same time** (one `Dial` to every internal extension and external number). The **first
-  responder to press 1** takes charge (ACK) — at that instant Asterisk's `Dial` drops every other
-  ringing/answered call. The list is baked into the dialplan at reload time; the ring duration is
-  the "Alarm ring time" setting.
+  responder to press the confirm key** takes charge (ACK) — at that instant Asterisk's `Dial` drops
+  every other ringing/answered call. The list is baked into the dialplan at reload time; the ring
+  duration is the "Alarm ring time" setting.
+- **Responder confirmation is configurable** (Settings → *Responders & calls*):
+  - **Key to take charge** (`confirm_key`, default `1`) — the DTMF key the responder presses.
+  - **Confirmation timeout** (`confirm_timeout`, default 15s) — how long they have to press the key
+    on each prompt (the prompt repeats up to 3 times).
+  - **After the alarm is confirmed** (`confirm_action`): `disarm` closes the session (incident over)
+    or `hold` keeps it as `ACKED` ("TAKEN CHARGE") until an operator manually disarms.
+  - **Announce on the speakers** (`confirm_announce`, default yes) — play the "taken charge"
+    announcement when a responder confirms.
 - **If nobody takes charge**, the alarm keeps re-announcing on the speakers and re-calling the
-  responders every "Repeat alarm every" seconds until someone presses 1 or an operator disarms.
-  Multiple operators can be in alarm at once — each escalates independently (no blocking).
+  responders every "Repeat alarm every" seconds until someone presses the confirm key or an operator
+  disarms. Multiple operators can be in alarm at once — each escalates independently (no blocking).
 - The extension and the check-in number are spoken with `SayDigits` in the language set by
   "Spoken number language" (default Italian).
 - The Settings page has **Test** buttons (test announcement / test alarm call) and an

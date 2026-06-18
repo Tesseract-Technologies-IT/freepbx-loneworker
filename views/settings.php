@@ -65,8 +65,8 @@ var LW = {
 		arm: <?php echo json_encode(_('%EXT% dials %ARM% → the speakers (paging group %PG%) announce that the lone worker system is armed for extension %EXT%, and a %TIMEOUT%-minute countdown starts.')); ?>,
 		reminder: <?php echo json_encode(_('After %REMAFTER% minutes a reminder is announced on the speakers, then repeated every %REMINT% minutes until the deadline.')); ?>,
 		checkin: <?php echo json_encode(_('%EXT% dials %CHK% at any time → the timer resets to %TIMEOUT% minutes ("I am OK") and everyone hears the confirmation.')); ?>,
-		alarm: <?php echo json_encode(_('If %TIMEOUT% minutes pass with no %CHK% → an alarm is announced on the speakers and ALL configured responders are called at the same time. The first responder to press 1 takes charge of the alarm, and all the other calls stop immediately.')); ?>,
-		alarmSeq: <?php echo json_encode(_('If %TIMEOUT% minutes pass with no %CHK% → an alarm is announced on the speakers and the responders are called one at a time, in list order, until someone presses 1 to take charge.')); ?>,
+		alarm: <?php echo json_encode(str_replace('%KEY%', (string) $s['confirm_key'], _('If %TIMEOUT% minutes pass with no %CHK% → an alarm is announced on the speakers and ALL configured responders are called at the same time. The first responder to press %KEY% takes charge of the alarm, and all the other calls stop immediately.'))); ?>,
+		alarmSeq: <?php echo json_encode(str_replace('%KEY%', (string) $s['confirm_key'], _('If %TIMEOUT% minutes pass with no %CHK% → an alarm is announced on the speakers and the responders are called one at a time, in list order, until someone presses %KEY% to take charge.'))); ?>,
 		disarm: <?php echo json_encode(_('%EXT% dials %DIS% → the session is closed and the speakers announce it was disarmed.')); ?>,
 		noPg: <?php echo json_encode(_('⚠ No paging group selected: announcements on the speakers will not work until you pick one below.')); ?>,
 		noRg: <?php echo json_encode(_('⚠ No responders configured: the emergency call cascade will not work until you add internal and/or external numbers below.')); ?>,
@@ -138,6 +138,9 @@ $gRepeat   = max(1, (int) round($s['alarm_repeat'] / 60));
 $gPg       = trim((string) $s['paging_group']) !== '' ? $s['paging_group'] : _('(not set)');
 $gMembers  = \FreePBX::Loneworker()->alarmMembers();
 $gMode     = ($s['alarm_mode'] === 'sequence') ? _('one at a time, in list order') : _('all at the same time');
+$gKey      = htmlspecialchars((string) $s['confirm_key']);
+$gConfMin  = max(1, (int) round((int) $s['confirm_timeout'] / 1)); // seconds (shown as-is)
+$gHold     = ($s['confirm_action'] === 'hold');
 ?>
 <div role="tabpanel" class="tab-pane active" id="lw-tab-howto">
 	<p class="lead" style="font-size:15px"><?php echo _('How the Lone Worker system works for everyone involved: the operator working alone, the people near the speakers, and the responders called in an emergency. The numbers below reflect your current settings.') ?></p>
@@ -185,8 +188,14 @@ $gMode     = ($s['alarm_mode'] === 'sequence') ? _('one at a time, in list order
 	<ul style="line-height:1.8">
 		<li><?php echo _('When the countdown reaches zero, the speakers announce: "Extension N did not confirm — check the operator immediately."') ?></li>
 		<li><?php echo sprintf(_('The configured responders are then called %1$s (%2$d configured).'), $gMode, count($gMembers)) ?></li>
-		<li><?php echo _('Whoever answers hears: "Lone worker alarm, the operator of extension N did not confirm — press 1 to take charge." Pressing 1 takes charge: every other call stops immediately and the speakers announce that the alarm was taken charge of.') ?></li>
-		<li><?php echo sprintf(_('If nobody presses 1, the alarm keeps re-announcing on the speakers and re-calling the responders every %d minutes, until someone takes charge or an operator disarms.'), $gRepeat) ?></li>
+		<li><?php echo sprintf(_('Whoever answers hears: "Lone worker alarm, the operator of extension N did not confirm — press %1$s to take charge." They have %2$d seconds to press %1$s (the prompt repeats up to 3 times). Pressing %1$s takes charge: every other call stops immediately.'), $gKey, (int) $s['confirm_timeout']) ?></li>
+		<li><?php echo $gHold
+			? _('Once taken charge of, the session is kept as "TAKEN CHARGE" (no more calls or announcements) until an operator disarms it manually.')
+			: _('Once taken charge of, the session is closed (incident over).'); ?>
+			<?php echo !empty($s['confirm_announce'])
+				? _('The speakers announce that the alarm was taken charge of.')
+				: _('No announcement is played on the speakers.'); ?></li>
+		<li><?php echo sprintf(_('If nobody presses %1$s, the alarm keeps re-announcing on the speakers and re-calling the responders every %2$d minutes, until someone takes charge or an operator disarms.'), $gKey, $gRepeat) ?></li>
 	</ul>
 
 	<h3><?php echo _('Who hears what, from where') ?></h3>
@@ -195,7 +204,7 @@ $gMode     = ($s['alarm_mode'] === 'sequence') ? _('one at a time, in list order
 	<div class="alert alert-success"><i class="fa fa-mobile"></i> <strong><?php echo _('The operator\'s own phone (cordless)') ?></strong><br>
 		<?php echo sprintf(_('Only a short confirmation beep when dialing %1$s / %2$s / %3$s. No spoken message.'), htmlspecialchars($fcArm), htmlspecialchars($fcCheckin), htmlspecialchars($fcDisarm)) ?></div>
 	<div class="alert alert-warning"><i class="fa fa-phone"></i> <strong><?php echo _('The responders\' phones (internal extensions and external numbers)') ?></strong><br>
-		<?php echo _('Only during an alarm: the emergency call asking to press 1 to take charge. Only the person who answers each call hears it.') ?></div>
+		<?php echo sprintf(_('Only during an alarm: the emergency call asking to press %s to take charge. Only the person who answers each call hears it.'), $gKey) ?></div>
 </div>
 
 <div role="tabpanel" class="tab-pane" id="lw-tab-timers">
@@ -279,11 +288,49 @@ if (trim($numbersVal) === '') {
 		</select>
 	</div>
 </div></div></div></div>
-<div class="row"><div class="col-md-12"><span class="help-block fpbx-help-block"><?php echo _('All at once: every number rings at the same time; the first to press 1 takes charge and the others stop. In sequence: each number is tried for the ring time, one after another in list order, until someone presses 1.') ?></span></div></div></div>
+<div class="row"><div class="col-md-12"><span class="help-block fpbx-help-block"><?php echo sprintf(_('All at once: every number rings at the same time; the first to press %1$s takes charge and the others stop. In sequence: each number is tried for the ring time, one after another in list order, until someone presses %1$s.'), $gKey) ?></span></div></div></div>
 <?php
 lw_num(_('Alarm ring time (seconds)'), 'ring_time', $s['ring_time'], _('How long each responder rings during an alarm before giving up (per attempt). Default 45.'));
-lw_num(_('Repeat alarm every (seconds)'), 'alarm_repeat', $s['alarm_repeat'], _('If nobody presses 1, the alarm is re-announced and the responders are called again every this many seconds, until someone takes charge or an operator disarms. Keep it larger than the ring time. Default 120 (2 min).'));
+lw_num(_('Repeat alarm every (seconds)'), 'alarm_repeat', $s['alarm_repeat'], _('If nobody presses the confirm key, the alarm is re-announced and the responders are called again every this many seconds, until someone takes charge or an operator disarms. Keep it larger than the ring time. Default 120 (2 min).'));
 ?>
+
+<h3><?php echo _('Responder confirmation') ?></h3>
+<div class="element-container"><div class="row"><div class="col-md-12"><div class="row"><div class="form-group">
+	<div class="col-md-4"><label class="control-label" for="confirm_key"><?php echo _('Key to take charge') ?></label></div>
+	<div class="col-md-8">
+		<select class="form-control" id="confirm_key" name="confirm_key">
+		<?php foreach (['1','2','3','4','5','6','7','8','9','0','*'] as $k): ?>
+			<option value="<?php echo $k ?>"<?php echo ((string) $s['confirm_key'] === $k) ? ' selected' : '' ?>><?php echo $k ?></option>
+		<?php endforeach; ?>
+		</select>
+	</div>
+</div></div></div></div>
+<div class="row"><div class="col-md-12"><span class="help-block fpbx-help-block"><?php echo _('The DTMF key a responder presses on their phone to take charge of the alarm (which stops all the other calls). Default 1.') ?></span></div></div></div>
+<?php
+lw_num(_('Confirmation timeout (seconds)'), 'confirm_timeout', $s['confirm_timeout'], _('How long a responder has to press the key after each prompt. The prompt is repeated up to 3 times. Default 15.'));
+?>
+<div class="element-container"><div class="row"><div class="col-md-12"><div class="row"><div class="form-group">
+	<div class="col-md-4"><label class="control-label" for="confirm_action"><?php echo _('After the alarm is confirmed') ?></label></div>
+	<div class="col-md-8">
+		<select class="form-control" id="confirm_action" name="confirm_action">
+			<option value="disarm"<?php echo ($s['confirm_action'] !== 'hold') ? ' selected' : '' ?>><?php echo _('Close the session (incident over)') ?></option>
+			<option value="hold"<?php echo ($s['confirm_action'] === 'hold') ? ' selected' : '' ?>><?php echo _('Keep it as "taken charge" until an operator disarms') ?></option>
+		</select>
+	</div>
+</div></div></div></div>
+<div class="row"><div class="col-md-12"><span class="help-block fpbx-help-block"><?php echo _('What happens once a responder takes charge. Close the session: it ends and no more calls or announcements are made. Keep as taken charge: the calls and re-announcements stop, but the session stays visible (state "TAKEN CHARGE") until someone disarms it manually — useful to keep a record that it is being handled.') ?></span></div></div></div>
+
+<div class="element-container"><div class="row"><div class="col-md-12"><div class="row"><div class="form-group">
+	<div class="col-md-4"><label class="control-label" for="confirm_announce"><?php echo _('Announce "taken charge" on the speakers') ?></label></div>
+	<div class="col-md-8">
+		<select class="form-control" id="confirm_announce" name="confirm_announce">
+			<option value="1"<?php echo !empty($s['confirm_announce']) ? ' selected' : '' ?>><?php echo _('Yes') ?></option>
+			<option value="0"<?php echo empty($s['confirm_announce']) ? ' selected' : '' ?>><?php echo _('No') ?></option>
+		</select>
+	</div>
+</div></div></div></div>
+<div class="row"><div class="col-md-12"><span class="help-block fpbx-help-block"><?php echo _('When a responder takes charge, play the "alarm taken charge of" announcement on the speakers (paging group) so everyone on site knows it is being handled.') ?></span></div></div></div>
+
 <!-- Spoken-digits language -->
 <div class="element-container"><div class="row"><div class="col-md-12"><div class="row"><div class="form-group">
 	<div class="col-md-4"><label class="control-label" for="digit_language"><?php echo _('Spoken number language') ?></label></div>

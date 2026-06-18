@@ -115,6 +115,8 @@ function loneworker_get_config($engine) {
 	$cf    = 'app-loneworker-confirm';
 	$cpre  = loneworker_rec($s['rec_call_pre']);
 	$cpost = loneworker_rec($s['rec_call_post']);
+	$ckey  = preg_match('/^[0-9*]$/', (string) ($s['confirm_key'] ?? '1')) ? (string) $s['confirm_key'] : '1'; // key to take charge
+	$ctmo  = max(3, (int) ($s['confirm_timeout'] ?? 15)); // seconds to wait for the key on each prompt
 	$ext->add($cf, 's', '', new ext_answer(''));
 	$ext->add($cf, 's', '', new ext_setvar('CHANNEL(language)', $lang));
 	$ext->add($cf, 's', '', new ext_setvar('LWTRY', '0'));
@@ -124,8 +126,8 @@ function loneworker_get_config($engine) {
 	else              { $ext->add($cf, 's', '', new ext_noop('LW confirm ext=${ARG1}')); }
 	$ext->add($cf, 's', '', new ext_saydigits('${ARG1}'));
 	if ($cpost !== '') { $ext->add($cf, 's', '', new ext_playback($cpost)); }
-	$ext->add($cf, 's', '', new ext_read('LWKEY', '', '1', '', '1', '6'));
-	$ext->add($cf, 's', '', new ext_gotoif('$["${LWKEY}" = "1"]', 's,take'));
+	$ext->add($cf, 's', '', new ext_read('LWKEY', '', '1', '', '1', (string) $ctmo));
+	$ext->add($cf, 's', '', new ext_gotoif('$["${LWKEY}" = "' . $ckey . '"]', 's,take'));
 	$ext->add($cf, 's', '', new ext_gotoif('$[${LWTRY} < 3]', 's,loop'));
 	$ext->add($cf, 's', '', new ext_hangup(''));
 	$ext->add($cf, 's', 'take', new ext_agi($agi . ',ack,${ARG1}'));

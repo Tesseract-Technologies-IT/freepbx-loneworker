@@ -6,6 +6,7 @@ if (!defined('FREEPBX_IS_AUTH')) { die('No direct script access allowed'); }
 (window.LW = window.LW || {}).grid = {
 	armed: <?php echo json_encode(_('ARMED')); ?>,
 	alarm: <?php echo json_encode(_('ALARM')); ?>,
+	acked: <?php echo json_encode(_('TAKEN CHARGE')); ?>,
 	disarm: <?php echo json_encode(_('Disarm')); ?>,
 	confirmDisarm: <?php echo json_encode(_('Disarm session %s?')); ?>,
 	inMin: <?php echo json_encode(_('in %dm')); ?>,

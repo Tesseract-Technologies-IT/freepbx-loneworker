@@ -27,6 +27,10 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		'retention_days'         => 365,
 		'ring_time'              => 45,     // ring seconds of the alarm cascade
 		'alarm_repeat'           => 120,    // how often to repeat the alarm until taken charge of
+		'confirm_key'            => '1',    // DTMF key the responder presses to take charge (0-9 or *)
+		'confirm_timeout'        => 15,     // seconds to wait for the key on each prompt
+		'confirm_action'         => 'disarm', // after a responder confirms: 'disarm' (close) | 'hold' (keep as acknowledged until manual disarm)
+		'confirm_announce'       => 1,      // play the "taken charge" announcement on the speakers after confirmation
 		'digit_language'         => 'it',   // language SayDigits uses to speak the extension and numbers
 		// recording id (System Recordings) for each announcement
 		'rec_armed_pre'       => '', 'rec_armed_post'       => '',
@@ -123,6 +127,11 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 			if (is_array($v)) { $v = implode(',', $v); } // multiselect -> CSV
 			$clean[$k] = $v;
 		}
+		// validate responder-confirmation settings
+		$clean['confirm_key'] = preg_match('/^[0-9*]$/', (string) $clean['confirm_key']) ? (string) $clean['confirm_key'] : '1';
+		$clean['confirm_timeout'] = max(3, min(120, (int) $clean['confirm_timeout']));
+		$clean['confirm_action'] = in_array($clean['confirm_action'], ['disarm', 'hold'], true) ? $clean['confirm_action'] : 'disarm';
+		$clean['confirm_announce'] = !empty($clean['confirm_announce']) ? 1 : 0;
 		$this->setConfig('settings', $clean);
 		return $clean;
 	}
@@ -294,6 +303,24 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		return ['result' => 'ok', 'ext' => $ext];
 	}
 
+	/** Apply the configured post-confirmation behaviour to a taken-charge alarm.
+	 *  confirm_action: 'disarm' closes the session (incident over); 'hold' keeps it as
+	 *  ACKNOWLEDGED (no more calls/announcements) until an operator manually disarms.
+	 *  confirm_announce: whether to play the "taken charge" announcement on the speakers. */
+	private function finishAck($ext, $s) {
+		$ext = (string) $ext;
+		$this->logEvent('ACK', $ext, []);
+		if (($s['confirm_action'] ?? 'disarm') === 'hold') {
+			$u = $this->db->prepare("UPDATE loneworker_sessions SET state='ACKED', next_reminder_ts=0 WHERE ext=?");
+			$u->execute([$ext]);
+			$this->logEvent('ACK_HOLD', $ext, []); // kept as acknowledged until manual disarm
+		} else {
+			$this->deleteSession($ext);
+			$this->logEvent('DISARM', $ext, ['reason' => 'alarm-acked']);
+		}
+		if (!empty($s['confirm_announce'])) { $this->enqueueAnnounce('ack', $ext); }
+	}
+
 	/** Take charge (#) of the oldest ALARMING alarm. */
 	public function ackOldest() {
 		$s = $this->getSettings();
@@ -302,14 +329,11 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		$row = $sth->fetch(\PDO::FETCH_ASSOC);
 		if (!$row) { $this->logEvent('ERROR', null, ['detail' => 'ack-no-session']); return ['result' => 'none', 'ext' => '']; }
 		$ext = $row['ext'];
-		$this->deleteSession($ext);
-		$this->logEvent('ACK', $ext, []);
-		$this->logEvent('DISARM', $ext, ['reason' => 'alarm-acked']);
-		$this->enqueueAnnounce('ack', $ext);
+		$this->finishAck($ext, $s);
 		return ['result' => 'ok', 'ext' => $ext];
 	}
 
-	/** Take charge of the alarm of a specific extension (responder pressed 1). */
+	/** Take charge of the alarm of a specific extension (responder pressed the confirm key). */
 	public function ackByExt($ext) {
 		$ext = (string) $ext;
 		$s = $this->getSettings();
@@ -319,10 +343,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 			$this->logEvent('ERROR', $ext, ['detail' => 'ack-not-alarming']);
 			return ['result' => 'none', 'ext' => $ext];
 		}
-		$this->deleteSession($ext);
-		$this->logEvent('ACK', $ext, []);
-		$this->logEvent('DISARM', $ext, ['reason' => 'alarm-acked']);
-		$this->enqueueAnnounce('ack', $ext);
+		$this->finishAck($ext, $s);
 		return ['result' => 'ok', 'ext' => $ext];
 	}
 

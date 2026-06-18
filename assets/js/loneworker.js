@@ -17,6 +17,7 @@ function lwFmtTime(ts) {
 function lwTimeFormatter(value) { return lwFmtTime(value); }
 function lwStateFormatter(value) {
 	if (value === 'ALARMING') { return '<span class="label label-danger">' + lwG('alarm', 'ALARM') + '</span>'; }
+	if (value === 'ACKED') { return '<span class="label label-warning">' + lwG('acked', 'TAKEN CHARGE') + '</span>'; }
 	return '<span class="label label-success">' + lwG('armed', 'ARMED') + '</span>';
 }
 function lwActionFormatter(value, row) {
