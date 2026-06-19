@@ -145,6 +145,9 @@ function loneworker_get_config($engine) {
 	$ctmo  = max(3, (int) ($s['confirm_timeout'] ?? 15)); // seconds to wait for the key on each prompt
 	$ext->add($cf, 's', '', new ext_answer(''));
 	$ext->add($cf, 's', '', new ext_setvar('CHANNEL(language)', $lang));
+	// the responder we reached = the dialled number, parsed from the channel name (Local/<num>@from-internal-...)
+	$ext->add($cf, 's', '', new ext_setvar('LWRESP', '${CUT(CUT(CHANNEL,@,1),/,2)}'));
+	$ext->add($cf, 's', '', new ext_agi($agi . ',answered,${ARG1},${LWRESP}')); // call log: who answered
 	$ext->add($cf, 's', '', new ext_setvar('LWTRY', '0'));
 	$ext->add($cf, 's', '', new ext_wait('1'));
 	$ext->add($cf, 's', 'loop', new ext_setvar('LWTRY', '$[${LWTRY} + 1]'));
@@ -156,7 +159,7 @@ function loneworker_get_config($engine) {
 	$ext->add($cf, 's', '', new ext_gotoif('$["${LWKEY}" = "' . $ckey . '"]', 's,take'));
 	$ext->add($cf, 's', '', new ext_gotoif('$[${LWTRY} < 3]', 's,loop'));
 	$ext->add($cf, 's', '', new ext_hangup(''));
-	$ext->add($cf, 's', 'take', new ext_agi($agi . ',ack,${ARG1}'));
+	$ext->add($cf, 's', 'take', new ext_agi($agi . ',ack,${ARG1},${LWRESP}'));
 	$ext->add($cf, 's', '', new ext_playback('beep'));
 	$ext->add($cf, 's', '', new ext_return(''));
 }

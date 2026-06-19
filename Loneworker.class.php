@@ -324,11 +324,18 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	 *  confirm_action: 'disarm' closes the session (incident over); 'hold' keeps it as
 	 *  ACKNOWLEDGED (no more calls/announcements) until an operator manually disarms.
 	 *  confirm_announce: whether to play the "taken charge" announcement on the speakers. */
-	private function finishAck($ext, $s) {
+	/** Log that a responder answered an alarm call (for the per-session call log). */
+	public function logResponderAnswered($op, $responder) {
+		$op = (string) $op; $responder = (string) $responder;
+		if ($op === '') { return; }
+		$this->logEvent('ANSWERED', $op, ['responder' => $responder]);
+	}
+
+	private function finishAck($ext, $s, $responder = '') {
 		$ext = (string) $ext;
 		$row = $this->getSession($ext);
 		$sid = $row['sid'] ?? null;
-		$this->logEvent('ACK', $ext, [], $sid);
+		$this->logEvent('ACK', $ext, ['responder' => (string) $responder], $sid);
 		if (($s['confirm_action'] ?? 'disarm') === 'hold') {
 			$u = $this->db->prepare("UPDATE loneworker_sessions SET state='ACKED', next_reminder_ts=0 WHERE ext=?");
 			$u->execute([$ext]);
@@ -353,7 +360,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	}
 
 	/** Take charge of the alarm of a specific extension (responder pressed the confirm key). */
-	public function ackByExt($ext) {
+	public function ackByExt($ext, $responder = '') {
 		$ext = (string) $ext;
 		$s = $this->getSettings();
 		$row = $this->getSession($ext);
@@ -362,7 +369,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 			$this->logEvent('ERROR', $ext, ['detail' => 'ack-not-alarming']);
 			return ['result' => 'none', 'ext' => $ext];
 		}
-		$this->finishAck($ext, $s);
+		$this->finishAck($ext, $s, $responder);
 		return ['result' => 'ok', 'ext' => $ext];
 	}
 
@@ -923,7 +930,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		foreach ($this->getSessions() as $s) { $active[(string) $s['ext']] = $s; }
 		$earliest = $from;
 		foreach ($active as $s) { $earliest = min($earliest, (int) $s['start_ts']); }
-		$relevant = ['ARM', 'CHECKIN', 'REMINDER', 'ALARM', 'ALARM_REPEAT', 'ACK', 'ACK_HOLD', 'CASCADE', 'DISARM'];
+		$relevant = ['ARM', 'CHECKIN', 'REMINDER', 'ALARM', 'ALARM_REPEAT', 'CASCADE', 'ANSWERED', 'ACK', 'ACK_HOLD', 'DISARM'];
 		$ph = implode(',', array_fill(0, count($relevant), '?'));
 		$st = $this->db->prepare("SELECT ts,event,ext,sid,payload FROM loneworker_events WHERE ts>=? AND event IN ($ph) AND ext IS NOT NULL AND ext<>'' ORDER BY id ASC");
 		$st->execute(array_merge([$earliest], $relevant));
@@ -932,7 +939,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		try { foreach (\FreePBX::Core()->getAllUsers() as $u) { $names[$u['extension']] = $u['name']; } } catch (\Throwable $e) {}
 		$mk = function ($e, $ts) use ($names) {
 			return ['ext' => $e, 'name' => $names[$e] ?? '', 'sid' => null, 'start_ts' => $ts, 'end_ts' => null, 'end_reason' => '',
-				'checkins' => 0, 'reminders' => 0, 'alarms' => 0, 'recalls' => 0, 'acked' => false, 'events' => []];
+				'checkins' => 0, 'reminders' => 0, 'alarms' => 0, 'recalls' => 0, 'acked' => false, 'acked_by' => '', 'events' => []];
 		};
 		$open = []; $sessions = [];
 		foreach ($rows as $r) {
@@ -948,7 +955,11 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 			if ($ev === 'REMINDER') { $open[$e]['reminders']++; }
 			if ($ev === 'ALARM') { $open[$e]['alarms']++; }
 			if ($ev === 'ALARM_REPEAT') { $open[$e]['recalls']++; }
-			if ($ev === 'ACK' || $ev === 'ACK_HOLD') { $open[$e]['acked'] = true; }
+			if ($ev === 'ACK' || $ev === 'ACK_HOLD') {
+				$open[$e]['acked'] = true;
+				$pa = json_decode((string) $r['payload'], true);
+				if (is_array($pa) && !empty($pa['responder'])) { $open[$e]['acked_by'] = (string) $pa['responder']; }
+			}
 			if ($ev === 'DISARM') {
 				$open[$e]['end_ts'] = $ts;
 				$pl = json_decode((string) $r['payload'], true);

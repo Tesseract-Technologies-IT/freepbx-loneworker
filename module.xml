@@ -2,11 +2,12 @@
 	<rawname>loneworker</rawname>
 	<repo>local</repo>
 	<name>Lone Worker</name>
-	<version>1.0.7</version>
+	<version>1.0.8</version>
 	<publisher>Tesseract Technologies</publisher>
 	<license>GPLv3+</license>
 	<licenselink>http://www.gnu.org/licenses/gpl-3.0.txt</licenselink>
 	<changelog>
+		*1.0.8* Session log now records the alarm call log: which responders were called (cascade), which responder answered, and which responder took charge — shown in each session's timeline and as a "taken charge by N" badge.
 		*1.0.7* Each session now gets a stable, guaranteed-unique ID (assigned at arm, stored on the session and stamped on every one of its events); the Session log shows and searches by it. Sessions are grouped by that ID when present (robust), with reconstruction as a fallback for pre-1.0.7 history.
 		*1.0.6* Add a per-session log (Session log view): browse active and past sessions, each expandable to its full timeline (arm, check-ins, reminders, alarm, re-calls, take-charge, disarm) with summary badges, duration, end reason; period filter (today/7d/30d/all) and live extension/name search.
 		*1.0.5* Consistent navigation bar (Dashboard / Active sessions / Event history / Settings) on every view, so you can always return to the Dashboard; fixed the stale "Active sessions" link that pointed to the Dashboard.

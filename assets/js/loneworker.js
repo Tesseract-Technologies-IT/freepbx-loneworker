@@ -378,7 +378,14 @@ function lwHistDetail(s) {
 			: (e.event === 'ACK' || e.event === 'ACK_HOLD') ? 'text-warning'
 			: (e.event === 'ARM' || e.event === 'CHECKIN') ? 'text-success' : 'text-muted';
 		var extra = '';
-		if (e.payload) { try { var p = JSON.parse(e.payload); if (p && p.reason) { extra = ' (' + lwEsc(p.reason) + ')'; } } catch (x) {} }
+		if (e.payload) { try {
+			var p = JSON.parse(e.payload);
+			if (p) {
+				if (p.responder) { extra = ' · ' + ((e.event === 'ACK' || e.event === 'ACK_HOLD') ? (t.by + ' ') : '') + '<strong>' + lwEsc(p.responder) + '</strong>'; }
+				else if (p.members && p.members.length) { extra = ' · ' + t.called + ' ' + lwEsc(p.members.join(', ')); }
+				else if (p.reason) { extra = ' (' + lwEsc(p.reason) + ')'; }
+			}
+		} catch (x) {} }
 		h += '<div style="padding:2px 0;border-bottom:1px solid #f3f3f3;font-size:12px">'
 			+ '<span class="text-muted">' + new Date(e.ts * 1000).toLocaleString() + '</span> · '
 			+ '<strong class="' + cls + '">' + lbl + '</strong>' + extra + '</div>';
@@ -391,7 +398,7 @@ function lwHistSummary(s) {
 	if (s.reminders) { b.push('<span class="label label-info">' + t.reminders.replace('%d', s.reminders) + '</span>'); }
 	if (s.alarms) { b.push('<span class="label label-danger">' + t.alarms.replace('%d', s.alarms) + '</span>'); }
 	if (s.recalls) { b.push('<span class="label label-warning">' + t.recalls.replace('%d', s.recalls) + '</span>'); }
-	if (s.acked) { b.push('<span class="label label-warning">' + t.takenCharge + '</span>'); }
+	if (s.acked) { b.push('<span class="label label-warning">' + (s.acked_by ? t.ackedBy.replace('%s', lwEsc(s.acked_by)) : t.takenCharge) + '</span>'); }
 	return b.join(' ') || '<span class="text-muted">—</span>';
 }
 function lwHistRender() {

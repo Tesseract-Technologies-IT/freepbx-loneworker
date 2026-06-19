@@ -18,6 +18,7 @@ $agi = new AGI();
 
 $action = isset($argv[1]) ? $argv[1] : '';
 $ext    = isset($argv[2]) ? $argv[2] : '';
+$resp   = isset($argv[3]) ? $argv[3] : ''; // responder number (who answered / confirmed)
 if ($ext === '' && !empty($agi->request['agi_callerid'])) {
 	$ext = $agi->request['agi_callerid'];
 }
@@ -29,7 +30,8 @@ try {
 		case 'arm':     $res = $lw->arm($ext);     break;
 		case 'checkin': $res = $lw->checkin($ext); break;
 		case 'disarm':  $res = $lw->disarm($ext);  break;
-		case 'ack':     $res = ($ext !== '') ? $lw->ackByExt($ext) : $lw->ackOldest(); break;
+		case 'ack':     $res = ($ext !== '') ? $lw->ackByExt($ext, $resp) : $lw->ackOldest(); break;
+			case 'answered': $lw->logResponderAnswered($ext, $resp); $res = ['result' => 'ok', 'ext' => $ext]; break;
 		case 'isactive': $agi->set_variable('LW_ACTIVE', $lw->isAlarming($ext) ? '1' : '0'); $res = ['result' => 'ok', 'ext' => $ext]; break;
 		case 'nextann': // drain loop: fetch the next queued announcement and expose it as channel vars
 			$a = $lw->nextAnnouncement();

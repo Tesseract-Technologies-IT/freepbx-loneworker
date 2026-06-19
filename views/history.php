@@ -5,6 +5,7 @@ $evLabels = [
 	'ARM' => _('Armed'), 'CHECKIN' => _('Check-in'), 'DISARM' => _('Disarmed'),
 	'REMINDER' => _('Reminder'), 'ALARM' => _('Alarm'), 'ALARM_REPEAT' => _('Alarm re-call'),
 	'ACK' => _('Taken charge'), 'ACK_HOLD' => _('Taken charge (held)'), 'CASCADE' => _('Calling responders'),
+	'ANSWERED' => _('Responder answered'),
 ];
 ?>
 <div id="toolbar-history" style="margin-bottom:12px">
@@ -58,6 +59,9 @@ $evLabels = [
 		reminders: <?php echo json_encode(_('%d reminder(s)')); ?>,
 		recalls: <?php echo json_encode(_('%d re-call(s)')); ?>,
 		takenCharge: <?php echo json_encode(_('taken charge')); ?>,
+		ackedBy: <?php echo json_encode(_('taken charge by %s')); ?>,
+		by: <?php echo json_encode(_('by')); ?>,
+		called: <?php echo json_encode(_('called')); ?>,
 		endManual: <?php echo json_encode(_('disarmed manually')); ?>,
 		endAcked: <?php echo json_encode(_('closed after take-charge')); ?>,
 		ongoing: <?php echo json_encode(_('ongoing')); ?>,
