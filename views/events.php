@@ -19,7 +19,10 @@ $labels = [
 ];
 ?>
 <div id="toolbar-events">
-	<a href="config.php?display=loneworker" class="btn btn-default"><i class="fa fa-arrow-left"></i> <?php echo _('Active sessions') ?></a>
+	<a href="config.php?display=loneworker" class="btn btn-default"><i class="fa fa-dashboard"></i> <?php echo _('Dashboard') ?></a>
+	<a href="config.php?display=loneworker&amp;view=sessions" class="btn btn-default"><i class="fa fa-list"></i> <?php echo _('Active sessions') ?></a>
+	<a href="config.php?display=loneworker&amp;view=events" class="btn btn-primary"><i class="fa fa-history"></i> <?php echo _('Event history') ?></a>
+	<a href="config.php?display=loneworker&amp;view=settings" class="btn btn-default"><i class="fa fa-cog"></i> <?php echo _('Settings') ?></a>
 	<a href="config.php?display=loneworker&amp;view=events" class="btn btn-default"><i class="fa fa-refresh"></i> <?php echo _('Refresh') ?></a>
 </div>
 <table data-toggle="table" data-pagination="true" data-search="true" data-page-size="25" class="table table-striped" id="lw-events">

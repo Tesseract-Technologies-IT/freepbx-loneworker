@@ -28,8 +28,10 @@ if ($rf || $rw):
 <div class="alert alert-success" style="padding:6px 10px"><i class="fa fa-check"></i> <?php echo _('Readiness: ready for alarms.') ?></div>
 <?php endif; ?>
 <div id="toolbar-grid">
-	<a href="config.php?display=loneworker&amp;view=settings" class="btn btn-default"><i class="fa fa-cog"></i> <?php echo _('Settings') ?></a>
+	<a href="config.php?display=loneworker" class="btn btn-default"><i class="fa fa-dashboard"></i> <?php echo _('Dashboard') ?></a>
+	<a href="config.php?display=loneworker&amp;view=sessions" class="btn btn-primary"><i class="fa fa-list"></i> <?php echo _('Active sessions') ?></a>
 	<a href="config.php?display=loneworker&amp;view=events" class="btn btn-default"><i class="fa fa-history"></i> <?php echo _('Event history') ?></a>
+	<a href="config.php?display=loneworker&amp;view=settings" class="btn btn-default"><i class="fa fa-cog"></i> <?php echo _('Settings') ?></a>
 	<button type="button" id="lw-refresh" class="btn btn-default"><i class="fa fa-refresh"></i> <?php echo _('Refresh') ?></button>
 </div>
 <table data-toolbar="#toolbar-grid" data-escape="true" data-toggle="table"
