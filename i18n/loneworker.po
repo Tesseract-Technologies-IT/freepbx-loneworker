@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: loneworker 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-19 12:02+0200\n"
+"POT-Creation-Date: 2026-06-19 12:09+0200\n"
 "PO-Revision-Date: 2026-06-18 15:13+0200\n"
 "Last-Translator: Tesseract Technologies\n"
 "Language-Team: Italian\n"
@@ -62,124 +62,124 @@ msgstr "%s è già usato da %s"
 msgid "Lone Worker: some feature codes were not applied (conflict)"
 msgstr "Uomo a Terra: alcuni feature code non sono stati applicati (conflitto)"
 
-#: Loneworker.class.php:710
+#: Loneworker.class.php:731
 msgid "No paging group set: announcements on the speakers will not play."
 msgstr "Nessun paging group impostato: gli annunci sulle casse non verranno riprodotti."
 
-#: Loneworker.class.php:714
+#: Loneworker.class.php:735
 #, php-format
 msgid "Paging group %s exists."
 msgstr "Il paging group %s esiste."
 
-#: Loneworker.class.php:714
+#: Loneworker.class.php:735
 #, php-format
 msgid "Paging group %s does not exist."
 msgstr "Il paging group %s non esiste."
 
-#: Loneworker.class.php:719
+#: Loneworker.class.php:740
 msgid "in sequence"
 msgstr "in sequenza"
 
-#: Loneworker.class.php:719
+#: Loneworker.class.php:740
 msgid "all at once"
 msgstr "tutti insieme"
 
-#: Loneworker.class.php:720
+#: Loneworker.class.php:741
 msgid "No alarm responders configured (internal or external)."
 msgstr "Nessun soccorritore configurato (interno o esterno)."
 
-#: Loneworker.class.php:721
+#: Loneworker.class.php:742
 #, php-format
 msgid "%d alarm responder(s) configured, called %s."
 msgstr "%d soccorritore/i configurato/i, chiamati %s."
 
-#: Loneworker.class.php:732
+#: Loneworker.class.php:753
 msgid "There are external responder numbers but no outbound routes exist: the alarm cannot call them."
 msgstr "Ci sono numeri esterni ma non esistono outbound route: l'allarme non può chiamarli."
 
-#: Loneworker.class.php:736
+#: Loneworker.class.php:757
 #, php-format
 msgid "No enabled outbound route matches external number %s."
 msgstr "Nessuna outbound route abilitata corrisponde al numero esterno %s."
 
-#: Loneworker.class.php:737
+#: Loneworker.class.php:758
 #, php-format
 msgid "External number %s only matches a route filtered by Caller ID; the alarm Caller ID may not pass it."
 msgstr "Il numero esterno %s corrisponde solo a una route filtrata per Caller ID; il Caller ID dell'allarme potrebbe non superarla."
 
-#: Loneworker.class.php:738
+#: Loneworker.class.php:759
 #, php-format
 msgid "External number %s matches route \"%s\" but its trunk is disabled."
 msgstr "Il numero esterno %s corrisponde alla route \"%s\" ma il suo trunk è disabilitato."
 
-#: Loneworker.class.php:739
+#: Loneworker.class.php:760
 #, php-format
 msgid "External number %s will route out via \"%s\"."
 msgstr "Il numero esterno %s uscirà tramite \"%s\"."
 
-#: Loneworker.class.php:743
+#: Loneworker.class.php:764
 #, php-format
 msgid "External calls will present Caller ID %s."
 msgstr "Le chiamate esterne presenteranno il Caller ID %s."
 
-#: Loneworker.class.php:746
+#: Loneworker.class.php:767
 msgid "No alarm Caller ID set: external calls go out as the down worker extension. If the trunk/route has no outbound CID, the carrier may receive an internal number. Set a service extension or an explicit Caller ID."
 msgstr "Nessun Caller ID d'allarme impostato: le chiamate esterne escono come l'interno dell'operatore caduto. Se trunk/route non hanno un outbound CID, l'operatore telefonico potrebbe ricevere un numero interno. Imposta un interno di servizio o un Caller ID esplicito."
 
-#: Loneworker.class.php:749
+#: Loneworker.class.php:770
 #, php-format
 msgid "Service extension %s has no outbound Caller ID: the carrier may receive an internal number. Set its Outbound CID or an explicit Caller ID."
 msgstr "L'interno di servizio %s non ha un outbound Caller ID: l'operatore telefonico potrebbe ricevere un numero interno. Imposta il suo Outbound CID o un Caller ID esplicito."
 
-#: Loneworker.class.php:750
+#: Loneworker.class.php:771
 #, php-format
 msgid "External calls will use the outbound Caller ID of extension %s (%s)."
 msgstr "Le chiamate esterne useranno l'outbound Caller ID dell'interno %s (%s)."
 
-#: Loneworker.class.php:761
+#: Loneworker.class.php:782
 #, php-format
 msgid "Built-in announcement audio is missing (%s): reinstall the module."
 msgstr "Audio degli annunci integrato mancante (%s): reinstalla il modulo."
 
-#: Loneworker.class.php:762
+#: Loneworker.class.php:783
 msgid "Built-in announcement audio is installed."
 msgstr "Audio degli annunci integrato installato."
 
-#: Loneworker.class.php:766
+#: Loneworker.class.php:787
 #, php-format
 msgid "Feature code \"%s\" is not active."
 msgstr "Il feature code \"%s\" non è attivo."
 
-#: Loneworker.class.php:772
+#: Loneworker.class.php:793
 msgid "Asterisk Manager (AMI) reachable."
 msgstr "Asterisk Manager (AMI) raggiungibile."
 
-#: Loneworker.class.php:772
+#: Loneworker.class.php:793
 msgid "Asterisk Manager (AMI) not reachable: announcements and calls will fail."
 msgstr "Asterisk Manager (AMI) non raggiungibile: annunci e chiamate falliranno."
 
-#: Loneworker.class.php:776
+#: Loneworker.class.php:797
 msgid "Monitoring job is registered."
 msgstr "Il job di monitoraggio è registrato."
 
-#: Loneworker.class.php:776
+#: Loneworker.class.php:797
 msgid "Monitoring job is not registered."
 msgstr "Il job di monitoraggio non è registrato."
 
-#: Loneworker.class.php:780
+#: Loneworker.class.php:801
 msgid "First reminder is not before the timeout: reminders will not play."
 msgstr "Il primo promemoria non è prima del timeout: i promemoria non verranno riprodotti."
 
-#: Loneworker.class.php:781
+#: Loneworker.class.php:802
 msgid "Alarm repeat interval is shorter than the ring time: alarm rounds may overlap."
 msgstr "L'intervallo di ripetizione allarme è inferiore alla durata squillo: i giri d'allarme potrebbero sovrapporsi."
 
 # ---- action bar ----
-#: Loneworker.class.php:792
+#: Loneworker.class.php:813
 msgid "Reset"
 msgstr "Ripristina"
 
-#: Loneworker.class.php:793
+#: Loneworker.class.php:814
 msgid "Submit"
 msgstr "Salva"
 
@@ -595,6 +595,10 @@ msgid "Timeline"
 msgstr "Cronologia"
 
 #: views/history.php:65
+msgid "Session ID"
+msgstr "ID sessione"
+
+#: views/history.php:66
 msgid "No recorded actions."
 msgstr "Nessuna azione registrata."
 

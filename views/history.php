@@ -62,6 +62,7 @@ $evLabels = [
 		endAcked: <?php echo json_encode(_('closed after take-charge')); ?>,
 		ongoing: <?php echo json_encode(_('ongoing')); ?>,
 		timeline: <?php echo json_encode(_('Timeline')); ?>,
+		sessionId: <?php echo json_encode(_('Session ID')); ?>,
 		noEvents: <?php echo json_encode(_('No recorded actions.')); ?>
 	}
 };

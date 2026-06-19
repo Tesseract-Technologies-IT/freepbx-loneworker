@@ -369,8 +369,9 @@ var lwHistData = null, lwHistExpanded = {};
 function lwEsc(v) { return $('<i>').text(v == null ? '' : ('' + v)).html(); }
 function lwHistDetail(s) {
 	var t = LW.hist.i18n;
-	if (!s.events || !s.events.length) { return '<span class="text-muted">' + t.noEvents + '</span>'; }
-	var h = '<div style="font-weight:bold;margin-bottom:4px">' + t.timeline + '</div>';
+	var h = '<div style="font-size:11px;color:#888;margin-bottom:6px">' + t.sessionId + ': <code>' + lwEsc(s.id) + '</code></div>';
+	if (!s.events || !s.events.length) { return h + '<span class="text-muted">' + t.noEvents + '</span>'; }
+	h += '<div style="font-weight:bold;margin-bottom:4px">' + t.timeline + '</div>';
 	s.events.forEach(function (e) {
 		var lbl = LW.hist.evLabels[e.event] || e.event;
 		var cls = (e.event === 'ALARM' || e.event === 'ALARM_REPEAT') ? 'text-danger'
@@ -397,7 +398,8 @@ function lwHistRender() {
 	if (!lwHistData) { return; }
 	var t = LW.hist.i18n, q = ($('#lw-hist-search').val() || '').trim().toLowerCase();
 	var rows = (lwHistData.sessions || []).filter(function (s) {
-		return !q || ('' + s.ext).toLowerCase().indexOf(q) >= 0 || ('' + (s.name || '')).toLowerCase().indexOf(q) >= 0;
+		return !q || ('' + s.ext).toLowerCase().indexOf(q) >= 0 || ('' + (s.name || '')).toLowerCase().indexOf(q) >= 0
+			|| ('' + (s.id || '')).toLowerCase().indexOf(q) >= 0;
 	});
 	if (!rows.length) { $('#lw-hist-rows').html('<tr><td colspan="6" class="text-muted">' + t.none + '</td></tr>'); return; }
 	var html = '';

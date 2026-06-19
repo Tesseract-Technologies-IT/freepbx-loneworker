@@ -245,9 +245,25 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		return $sth->execute([$ext]);
 	}
 
-	public function logEvent($event, $ext = null, $payload = null) {
-		$sth = $this->db->prepare('INSERT INTO loneworker_events (ts, event, ext, payload) VALUES (?,?,?,?)');
-		$sth->execute([time(), $event, $ext, $payload !== null ? json_encode($payload) : null]);
+	/** Log an event. $sid (session id) is stamped automatically from the caller's active
+	 *  session when not given; pass it explicitly for events logged after the session row
+	 *  is removed (disarm / take-charge). */
+	public function logEvent($event, $ext = null, $payload = null, $sid = null) {
+		if ($sid === null && $ext !== null && $ext !== '') {
+			try {
+				$q = $this->db->prepare('SELECT sid FROM loneworker_sessions WHERE ext = ?');
+				$q->execute([$ext]);
+				$sid = $q->fetchColumn() ?: null;
+			} catch (\Throwable $e) {}
+		}
+		$sth = $this->db->prepare('INSERT INTO loneworker_events (ts, event, ext, sid, payload) VALUES (?,?,?,?,?)');
+		$sth->execute([time(), $event, $ext, $sid, $payload !== null ? json_encode($payload) : null]);
+	}
+
+	/** Generate a stable, unique session id (readable: ext-timestamp-rand). */
+	private function newSid($ext) {
+		try { $r = bin2hex(random_bytes(2)); } catch (\Throwable $e) { $r = substr(md5(uniqid('', true)), 0, 4); }
+		return $ext . '-' . time() . '-' . $r;
 	}
 
 	public function getEvents($limit = 50) {
@@ -268,9 +284,11 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		if ($this->getSession($ext)) { $this->logEvent('ERROR', $ext, ['detail' => 'already-armed']); return ['result' => 'dup', 'ext' => $ext]; }
 		if (count($this->getSessions()) >= (int) $s['max_sessions']) { $this->logEvent('ERROR', $ext, ['detail' => 'max-sessions']); return ['result' => 'max', 'ext' => $ext]; }
 		$now = time();
-		$sth = $this->db->prepare('INSERT INTO loneworker_sessions (ext,state,start_ts,next_reminder_ts,deadline_ts,alarm_started_ts) VALUES (?,?,?,?,?,NULL)');
-		$sth->execute([$ext, 'ARMED', $now, $now + (int) $s['reminder_after'], $now + (int) $s['timeout']]);
-		$this->logEvent('ARM', $ext, ['deadline' => $now + (int) $s['timeout']]);
+		$sid = $this->newSid($ext);
+		$sth = $this->db->prepare('INSERT INTO loneworker_sessions (ext,sid,state,start_ts,next_reminder_ts,deadline_ts,alarm_started_ts) VALUES (?,?,?,?,?,?,NULL)');
+		$sth->execute([$ext, $sid, 'ARMED', $now, $now + (int) $s['reminder_after'], $now + (int) $s['timeout']]);
+		$this->logEvent('ARM', $ext, ['deadline' => $now + (int) $s['timeout']], $sid);
+		$this->enqueueAnnounce('arm', $ext);
 		$this->enqueueAnnounce('arm', $ext);
 		return ['result' => 'ok', 'ext' => $ext];
 	}
@@ -295,8 +313,9 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		$s = $this->getSettings();
 		$row = $this->getSession($ext);
 		if (!$row) { $this->logEvent('ERROR', $ext, ['detail' => 'not-active']); return ['result' => 'notactive', 'ext' => $ext]; }
+		$sid = $row['sid'] ?? null;
 		$this->deleteSession($ext);
-		$this->logEvent('DISARM', $ext, ['reason' => 'manual']);
+		$this->logEvent('DISARM', $ext, ['reason' => 'manual'], $sid);
 		$this->enqueueAnnounce('disarm', $ext);
 		return ['result' => 'ok', 'ext' => $ext];
 	}
@@ -307,14 +326,16 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	 *  confirm_announce: whether to play the "taken charge" announcement on the speakers. */
 	private function finishAck($ext, $s) {
 		$ext = (string) $ext;
-		$this->logEvent('ACK', $ext, []);
+		$row = $this->getSession($ext);
+		$sid = $row['sid'] ?? null;
+		$this->logEvent('ACK', $ext, [], $sid);
 		if (($s['confirm_action'] ?? 'disarm') === 'hold') {
 			$u = $this->db->prepare("UPDATE loneworker_sessions SET state='ACKED', next_reminder_ts=0 WHERE ext=?");
 			$u->execute([$ext]);
-			$this->logEvent('ACK_HOLD', $ext, []); // kept as acknowledged until manual disarm
+			$this->logEvent('ACK_HOLD', $ext, [], $sid); // kept as acknowledged until manual disarm
 		} else {
 			$this->deleteSession($ext);
-			$this->logEvent('DISARM', $ext, ['reason' => 'alarm-acked']);
+			$this->logEvent('DISARM', $ext, ['reason' => 'alarm-acked'], $sid);
 		}
 		if (!empty($s['confirm_announce'])) { $this->enqueueAnnounce('ack', $ext); }
 	}
@@ -904,13 +925,13 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		foreach ($active as $s) { $earliest = min($earliest, (int) $s['start_ts']); }
 		$relevant = ['ARM', 'CHECKIN', 'REMINDER', 'ALARM', 'ALARM_REPEAT', 'ACK', 'ACK_HOLD', 'CASCADE', 'DISARM'];
 		$ph = implode(',', array_fill(0, count($relevant), '?'));
-		$st = $this->db->prepare("SELECT ts,event,ext,payload FROM loneworker_events WHERE ts>=? AND event IN ($ph) AND ext IS NOT NULL AND ext<>'' ORDER BY id ASC");
+		$st = $this->db->prepare("SELECT ts,event,ext,sid,payload FROM loneworker_events WHERE ts>=? AND event IN ($ph) AND ext IS NOT NULL AND ext<>'' ORDER BY id ASC");
 		$st->execute(array_merge([$earliest], $relevant));
 		$rows = $st->fetchAll(\PDO::FETCH_ASSOC);
 		$names = [];
 		try { foreach (\FreePBX::Core()->getAllUsers() as $u) { $names[$u['extension']] = $u['name']; } } catch (\Throwable $e) {}
 		$mk = function ($e, $ts) use ($names) {
-			return ['ext' => $e, 'name' => $names[$e] ?? '', 'start_ts' => $ts, 'end_ts' => null, 'end_reason' => '',
+			return ['ext' => $e, 'name' => $names[$e] ?? '', 'sid' => null, 'start_ts' => $ts, 'end_ts' => null, 'end_reason' => '',
 				'checkins' => 0, 'reminders' => 0, 'alarms' => 0, 'recalls' => 0, 'acked' => false, 'events' => []];
 		};
 		$open = []; $sessions = [];
@@ -921,6 +942,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 				$open[$e] = $mk($e, $ts);
 			}
 			if (!isset($open[$e])) { $open[$e] = $mk($e, $ts); $open[$e]['partial'] = true; }
+			if (empty($open[$e]['sid']) && !empty($r['sid'])) { $open[$e]['sid'] = $r['sid']; }
 			$open[$e]['events'][] = ['ts' => $ts, 'event' => $ev, 'payload' => $r['payload']];
 			if ($ev === 'CHECKIN') { $open[$e]['checkins']++; }
 			if ($ev === 'REMINDER') { $open[$e]['reminders']++; }
@@ -943,14 +965,23 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 			$s['active'] = $isActive;
 			$s['state'] = $isActive ? ($active[$s['ext']]['state'] ?? 'ARMED') : 'ENDED';
 			$s['duration'] = (($s['end_ts'] !== null ? $s['end_ts'] : $now) - $s['start_ts']);
-			$s['id'] = $s['ext'] . '@' . $s['start_ts'];
+			if (empty($s['sid']) && $isActive) { $s['sid'] = $active[$s['ext']]['sid'] ?? null; }
 			$out[] = $s;
 		}
 		usort($out, function ($a, $b) {
 			if ($a['active'] !== $b['active']) { return $a['active'] ? -1 : 1; } // active first
 			return $b['start_ts'] <=> $a['start_ts'];
 		});
-		return ['window' => $window, 'now' => $now, 'sessions' => array_slice($out, 0, (int) $limit)];
+		$out = array_slice($out, 0, (int) $limit);
+		// stable unique id: the real session id when available, else a collision-proof synthetic one
+		$seen = [];
+		foreach ($out as &$s) {
+			$id = !empty($s['sid']) ? $s['sid'] : ($s['ext'] . '@' . $s['start_ts']);
+			if (isset($seen[$id])) { $id .= '#' . (++$seen[$id]); } else { $seen[$id] = 0; }
+			$s['id'] = $id;
+		}
+		unset($s);
+		return ['window' => $window, 'now' => $now, 'sessions' => $out];
 	}
 
 	public function ajaxHandler() {

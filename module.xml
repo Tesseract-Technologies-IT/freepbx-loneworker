@@ -2,11 +2,12 @@
 	<rawname>loneworker</rawname>
 	<repo>local</repo>
 	<name>Lone Worker</name>
-	<version>1.0.6</version>
+	<version>1.0.7</version>
 	<publisher>Tesseract Technologies</publisher>
 	<license>GPLv3+</license>
 	<licenselink>http://www.gnu.org/licenses/gpl-3.0.txt</licenselink>
 	<changelog>
+		*1.0.7* Each session now gets a stable, guaranteed-unique ID (assigned at arm, stored on the session and stamped on every one of its events); the Session log shows and searches by it. Sessions are grouped by that ID when present (robust), with reconstruction as a fallback for pre-1.0.7 history.
 		*1.0.6* Add a per-session log (Session log view): browse active and past sessions, each expandable to its full timeline (arm, check-ins, reminders, alarm, re-calls, take-charge, disarm) with summary badges, duration, end reason; period filter (today/7d/30d/all) and live extension/name search.
 		*1.0.5* Consistent navigation bar (Dashboard / Active sessions / Event history / Settings) on every view, so you can always return to the Dashboard; fixed the stale "Active sessions" link that pointed to the Dashboard.
 		*1.0.4* Add a live Dashboard (auto-updating, no page refresh): KPI cards, live sessions with countdowns, announcement queue, system health, live event feed, plus a Reports section (today/7d/30d) with charts, per-operator stats, average take-charge time and CSV export.
@@ -27,6 +28,7 @@
 	<database>
 		<table name="loneworker_sessions">
 			<field name="ext" type="string" length="16" primarykey="true" notnull="true"/>
+			<field name="sid" type="string" length="32" notnull="false"/>
 			<field name="state" type="string" length="16" notnull="true" default="ARMED"/>
 			<field name="start_ts" type="integer" notnull="true" default="0"/>
 			<field name="next_reminder_ts" type="integer" notnull="true" default="0"/>
@@ -38,6 +40,7 @@
 			<field name="ts" type="integer" notnull="true" default="0"/>
 			<field name="event" type="string" length="24" notnull="true"/>
 			<field name="ext" type="string" length="16" notnull="false"/>
+			<field name="sid" type="string" length="32" notnull="false"/>
 			<field name="payload" type="text" notnull="false"/>
 		</table>
 		<table name="loneworker_announce_queue">
