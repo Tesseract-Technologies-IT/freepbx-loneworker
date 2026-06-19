@@ -113,7 +113,9 @@ function loneworker_get_config($engine) {
 	$callerExt = trim((string) ($s['alarm_caller_ext'] ?? ''));
 	$sequence = (($s['alarm_mode'] ?? 'simultaneous') === 'sequence');
 	$ext->add($em, 'start', '', new ext_noop('LW emergency ext=${CALLERID(num)}'));
-	$ext->add($em, 'start', '', new ext_setvar('LWEXT', '${CALLERID(num)}'));
+	// __LWEXT (double underscore) is inherited by the dialled responder legs, so the confirm
+	// subroutine can read ${LWEXT} directly (passing it as a Gosub arg via U() is unreliable).
+	$ext->add($em, 'start', '', new ext_setvar('__LWEXT', '${CALLERID(num)}'));
 	// outbound identity (outbound CID + matching CID-filtered routes)
 	if ($outcid !== '') {
 		$ext->add($em, 'start', '', new ext_setvar('CALLERID(all)', 'Lone Worker <' . $outcid . '>'));
@@ -121,7 +123,7 @@ function loneworker_get_config($engine) {
 		$ext->add($em, 'start', '', new ext_setvar('CALLERID(num)', $callerExt));
 		$ext->add($em, 'start', '', new ext_setvar('CALLERID(name)', 'Lone Worker'));
 	}
-	$uopt = 'U(app-loneworker-confirm^s^1(${LWEXT}))';
+	$uopt = 'U(app-loneworker-confirm^s^1)'; // LWEXT is inherited (__LWEXT), no Gosub arg needed
 	if (empty($members)) {
 		$ext->add($em, 'start', '', new ext_noop('LW: no responders configured'));
 	} elseif ($sequence) {                    // SEQUENCE: one at a time, in order
@@ -147,19 +149,19 @@ function loneworker_get_config($engine) {
 	$ext->add($cf, 's', '', new ext_setvar('CHANNEL(language)', $lang));
 	// the responder we reached = the dialled number, parsed from the channel name (Local/<num>@from-internal-...)
 	$ext->add($cf, 's', '', new ext_setvar('LWRESP', '${CUT(CUT(CHANNEL,@,1),/,2)}'));
-	$ext->add($cf, 's', '', new ext_agi($agi . ',answered,${ARG1},${LWRESP}')); // call log: who answered
+	$ext->add($cf, 's', '', new ext_agi($agi . ',answered,${LWEXT},${LWRESP}')); // call log: who answered
 	$ext->add($cf, 's', '', new ext_setvar('LWTRY', '0'));
 	$ext->add($cf, 's', '', new ext_wait('1'));
 	$ext->add($cf, 's', 'loop', new ext_setvar('LWTRY', '$[${LWTRY} + 1]'));
 	if ($cpre !== '') { $ext->add($cf, 's', '', new ext_playback($cpre)); }
-	else              { $ext->add($cf, 's', '', new ext_noop('LW confirm ext=${ARG1}')); }
-	$ext->add($cf, 's', '', new ext_saydigits('${ARG1}'));
+	else              { $ext->add($cf, 's', '', new ext_noop('LW confirm ext=${LWEXT}')); }
+	$ext->add($cf, 's', '', new ext_saydigits('${LWEXT}'));
 	if ($cpost !== '') { $ext->add($cf, 's', '', new ext_playback($cpost)); }
 	$ext->add($cf, 's', '', new ext_read('LWKEY', '', '1', '', '1', (string) $ctmo));
 	$ext->add($cf, 's', '', new ext_gotoif('$["${LWKEY}" = "' . $ckey . '"]', 's,take'));
 	$ext->add($cf, 's', '', new ext_gotoif('$[${LWTRY} < 3]', 's,loop'));
 	$ext->add($cf, 's', '', new ext_hangup(''));
-	$ext->add($cf, 's', 'take', new ext_agi($agi . ',ack,${ARG1},${LWRESP}'));
+	$ext->add($cf, 's', 'take', new ext_agi($agi . ',ack,${LWEXT},${LWRESP}'));
 	$ext->add($cf, 's', '', new ext_playback('beep'));
 	$ext->add($cf, 's', '', new ext_return(''));
 }
