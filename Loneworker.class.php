@@ -32,15 +32,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		'confirm_action'         => 'disarm', // after a responder confirms: 'disarm' (close) | 'hold' (keep as acknowledged until manual disarm)
 		'confirm_announce'       => 1,      // play the "taken charge" announcement on the speakers after confirmation
 		'digit_language'         => 'it',   // language SayDigits uses to speak the extension and numbers
-		// recording id (System Recordings) for each announcement
-		'rec_armed_pre'       => '', 'rec_armed_post'       => '',
-		'rec_confirmed_pre'     => '', 'rec_confirmed_post'     => '',
-		'rec_reminder_pre'     => '', 'rec_reminder_post'     => '',
-		'rec_alarm_pre' => '', 'rec_alarm_post' => '',
-		'rec_ack_pre'      => '', 'rec_ack_post'      => '',
-		'rec_disarmed_pre'    => '',
-		'rec_call_prompt_pre'  => '', 'rec_call_prompt_post' => '',
-		'rec_call_pre'         => '', 'rec_call_post'        => '',
+		// Announcement audio is the fixed built-in set shipped under sounds/ (not user-editable).
 	];
 
 	public function __construct($freepbx = null) {
@@ -103,8 +95,8 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		return rtrim($base ?: '/var/lib/asterisk', '/') . '/sounds';
 	}
 
-	/** Copy the bundled default announcement clips into <sounds>/loneworker so the
-	 *  dialplan can fall back to them when no System Recording is selected. */
+	/** Copy the built-in announcement clips into <sounds>/loneworker. The audio set is
+	 *  fixed (shipped with the module) and is always played by the dialplan. */
 	private function installDefaultSounds() {
 		$src = __DIR__ . '/sounds/it';
 		if (!is_dir($src)) { return; }
@@ -123,27 +115,10 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 
 	// ----------------------------------------------------------- Settings
 
-	/** Map of legacy (pre-1.7) recording keys to the current English keys, for back-compat. */
-	private $legacyRecKeys = [
-		'rec_attivato_pre' => 'rec_armed_pre', 'rec_attivato_post' => 'rec_armed_post',
-		'rec_confermato_pre' => 'rec_confirmed_pre', 'rec_confermato_post' => 'rec_confirmed_post',
-		'rec_promemoria_pre' => 'rec_reminder_pre', 'rec_promemoria_post' => 'rec_reminder_post',
-		'rec_allarme_paging_pre' => 'rec_alarm_pre', 'rec_allarme_paging_post' => 'rec_alarm_post',
-		'rec_acquisito_pre' => 'rec_ack_pre', 'rec_acquisito_post' => 'rec_ack_post',
-		'rec_disattivato_pre' => 'rec_disarmed_pre',
-		'rec_allarme_chiamata_remote_pre' => 'rec_call_prompt_pre', 'rec_allarme_chiamata_remote_post' => 'rec_call_prompt_post',
-		'rec_allarme_chiamata_pre' => 'rec_call_pre', 'rec_allarme_chiamata_post' => 'rec_call_post',
-	];
-
 	public function getSettings() {
 		$saved = $this->getConfig('settings');
 		$saved = is_array($saved) ? $saved : [];
-		$merged = array_merge($this->defaults, $saved);
-		// migrate legacy Italian recording keys to the new English keys
-		foreach ($this->legacyRecKeys as $old => $new) {
-			if (empty($merged[$new]) && !empty($saved[$old])) { $merged[$new] = $saved[$old]; }
-		}
-		return $merged;
+		return array_merge($this->defaults, $saved);
 	}
 
 	public function saveSettings($values) {
@@ -733,11 +708,14 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 			}
 		}
 
-		// Recordings (minimum set)
-		$reqd = ['rec_armed_pre' => _('armed'), 'rec_alarm_pre' => _('alarm'), 'rec_call_pre' => _('emergency call')];
+		// Built-in announcement audio: the fixed set must be installed under <sounds>/loneworker.
+		$reqd = ['armed-pre', 'alarm-pre', 'call-pre', 'reminder-pre', 'ack-pre', 'disarmed-pre', 'confirmed-pre'];
+		$dir = $this->soundsDir() . '/loneworker';
 		$miss = [];
-		foreach ($reqd as $k => $lbl) { if (empty($s[$k])) { $miss[] = $lbl; } }
-		$add($miss ? 'warn' : 'ok', $miss ? sprintf(_('Some key recordings are not set: %s.'), implode(', ', $miss)) : _('Key recordings are set.'));
+		foreach ($reqd as $c) { if (!is_file($dir . '/lw-' . $c . '.wav')) { $miss[] = $c; } }
+		$add($miss ? 'fail' : 'ok', $miss
+			? sprintf(_('Built-in announcement audio is missing (%s): reinstall the module.'), implode(', ', $miss))
+			: _('Built-in announcement audio is installed.'));
 
 		// Feature codes
 		foreach (['arm', 'checkin', 'disarm'] as $n) {

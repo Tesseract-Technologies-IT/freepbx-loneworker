@@ -40,9 +40,10 @@ import the public key, or allow unsigned modules (see [Signing](#signing-optiona
   fwconsole ma installlocal loneworker && fwconsole reload
   ```
 
-After installing, go to **Lone Worker → Settings** in the GUI and set the Paging group, the alarm
-responders (internal extensions + external numbers) and the System Recordings, then adjust the
-timers. The **live example** and the **Readiness** panel update as you edit.
+After installing, go to **Lone Worker → Settings** in the GUI and set the Paging group and the alarm
+responders (internal extensions + external numbers), then adjust the timers. The announcement audio
+is built in (Italian) — nothing to record. The **live example** and the **Readiness** panel update as
+you edit.
 
 ### Updating
 
@@ -163,23 +164,26 @@ key does that call win and Asterisk drops the others. A phone that answers witho
 repeat the whole round fires again. (Verified on Asterisk 22: the other legs stay in `Ring` while one
 answerer is in the confirm subroutine.)
 
-## Suggested recording scripts
+## Built-in announcements (fixed)
 
-Each announcement is split in two; the system speaks the extension number (e.g. "3-0-1") between the
-two parts. Suggested wording:
+The announcement audio is **built into the module (Italian) and is not editable** — there is nothing
+to record or select. The clips ship pre-installed (`sounds/it/`, copied to
+`<sounds>/loneworker/` on install) and are played automatically. Each message is split in two and the
+system speaks the extension number (e.g. "3-0-1") between the two parts; the Settings →
+*Announcements* tab shows the exact wording, read-only.
 
 | Message | Before « ext » After |
 |---|---|
-| **Armed** | "Attention. Lone worker system armed for extension" « N » "must confirm they are OK within 30 minutes by calling number" « check-in code » |
+| **Armed** | "Attention. Lone worker system armed for extension" « N » "must confirm their presence by calling number" « check-in code » |
 | **Confirmed** | "Lone worker: extension" « N » "has confirmed their presence. The system stays active." |
 | **Reminder** | "Lone worker reminder. Extension" « N » "must confirm presence. Only a few minutes remain before the alarm. Call number" « check-in code » |
 | **Alarm (speakers)** | "Lone worker alarm. Extension" « N » "did not confirm. Check the operator immediately. Emergency calls have been started." |
 | **Acknowledged** | "Lone worker alarm taken charge of for extension" « N » "A responder is checking the situation on site." |
 | **Disarmed** | "Lone worker system disarmed for extension" « N » (no second part) |
-| **Emergency call** | "Lone worker alarm. The operator of extension" « N » "did not confirm. Press the confirm key to take charge of the alarm." |
+| **Emergency call** | "Lone worker alarm. The operator of extension" « N » "did not confirm. Press one to take charge of the alarm." |
 
-The « check-in code » is **not recorded** into the audio: it is spoken dynamically with SayDigits
-from the current Check-in feature code, so changing the code updates the announcement automatically.
+The « check-in code » is **not part of the audio**: it is spoken dynamically with SayDigits from the
+current Check-in feature code, so changing the code updates the announcement automatically.
 
 ## Architecture (all native FreePBX)
 
@@ -191,7 +195,7 @@ from the current Check-in feature code, so changing the code updates the announc
   take-charge key (ACK) and the announcement-queue `drain` hook, delegating to the BMO class.
 - **Job** `loneworker tick` (every minute, `\FreePBX::Job`): evaluates reminders/alarms and drains
   the announcement queue as a safety net.
-- **Announcements** = System Recordings chosen by id on the Settings page; between the "before" and
+- **Announcements** = the fixed built-in clips under `<sounds>/loneworker/` (installed by the module); between the "before" and
   "after" parts the dialplan speaks the extension with `SayDigits(${CALLERID(num)})`.
 - **Settings** in kvstore; **announcement queue** and **speaker gate** in kvstore.
 - **i18n**: English source strings + `i18n/it_IT/LC_MESSAGES/loneworker.mo` (and `it/`).

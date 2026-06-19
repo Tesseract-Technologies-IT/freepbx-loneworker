@@ -8,16 +8,6 @@ $fcArm     = (new featurecode('loneworker', 'arm'))->getCodeActive() ?: '701';
 $fcCheckin = (new featurecode('loneworker', 'checkin'))->getCodeActive() ?: '702';
 $fcDisarm  = (new featurecode('loneworker', 'disarm'))->getCodeActive() ?: '703';
 
-// System Recordings options.
-$recs = function_exists('recordings_list') ? recordings_list() : [];
-$recOptions = function ($selected) use ($recs) {
-	$h = '<option value="">' . _('(none)') . "</option>\n";
-	foreach ($recs as $r) {
-		$h .= '<option value="' . $r['id'] . '"' . ((string) $r['id'] === (string) $selected ? ' selected' : '') . '>' . htmlspecialchars($r['displayname']) . "</option>\n";
-	}
-	return $h;
-};
-
 // Paging / Ring group lists (defensive: auto-detect the number key; fall back to a text box).
 $pagings = function_exists('paging_list') ? paging_list() : [];
 $rgs     = function_exists('ringgroups_list') ? ringgroups_list() : [];
@@ -402,35 +392,33 @@ lw_num(_('Event retention (days)'), 'retention_days', $s['retention_days'], _('A
 
 </div><!-- /limits -->
 <div role="tabpanel" class="tab-pane" id="lw-tab-ann">
-<h3><?php echo _('Announcements (System Recordings)') ?></h3>
-<p class="help-block"><?php echo _('Each announcement is split into a "before" and an "after" part; between them the system speaks the extension number digit by digit, e.g. "...extension 3-0-1...". Record the messages under Admin → System Recordings, then pick them here.') ?></p>
-<div class="alert alert-info"><i class="fa fa-volume-up"></i> <?php echo _('The module ships with default Italian announcements: if you leave a recording unset, the matching bundled clip is played automatically. Pick a System Recording here to override it with your own voice.') ?></div>
+<h3><?php echo _('Announcements (built-in)') ?></h3>
+<div class="alert alert-info"><i class="fa fa-lock"></i> <?php echo _('The announcement audio is built into the module (Italian) and is not editable: the clips ship pre-installed and are played automatically. Between the two parts of each message the system speaks the extension number digit by digit, e.g. "...extension 3-0-1...".') ?></div>
 
 <?php
-// One card per announcement: it cross-references the suggested text with each
-// System Recording selector AND shows who hears it (speakers vs responder phone).
+// Read-only reference of the fixed built-in messages and who hears each one.
 $groups = [
 	['title' => _('Armed — played when an operator dials 701'),                 'aud' => 'speakers', 'callnum' => true,
-		'pre' => ['rec_armed_pre', _('Attention. Lone worker system armed for extension')],
-		'post' => ['rec_armed_post', _('must confirm they are OK within 30 minutes by calling number')]],
+		'pre' => _('Attention. Lone worker system armed for extension'),
+		'post' => _('must confirm their presence by calling number')],
 	['title' => _('Confirmed — played when an operator dials 702'),              'aud' => 'speakers',
-		'pre' => ['rec_confirmed_pre', _('Lone worker: extension')],
-		'post' => ['rec_confirmed_post', _('has confirmed their presence. The system stays active.')]],
+		'pre' => _('Lone worker: extension'),
+		'post' => _('has confirmed their presence. The system stays active.')],
 	['title' => _('Reminder — played before the deadline'),                     'aud' => 'speakers', 'callnum' => true,
-		'pre' => ['rec_reminder_pre', _('Lone worker reminder. Extension')],
-		'post' => ['rec_reminder_post', _('must confirm presence. Only a few minutes remain before the alarm. Call number')]],
+		'pre' => _('Lone worker reminder. Extension'),
+		'post' => _('must confirm presence. Only a few minutes remain before the alarm. Call number')],
 	['title' => _('Alarm — played when the timeout expires'),                    'aud' => 'speakers',
-		'pre' => ['rec_alarm_pre', _('Lone worker alarm. Extension')],
-		'post' => ['rec_alarm_post', _('did not confirm. Check the operator immediately. Emergency calls have been started.')]],
+		'pre' => _('Lone worker alarm. Extension'),
+		'post' => _('did not confirm. Check the operator immediately. Emergency calls have been started.')],
 	['title' => _('Acknowledged — played when a responder takes charge'),        'aud' => 'speakers',
-		'pre' => ['rec_ack_pre', _('Lone worker alarm taken charge of for extension')],
-		'post' => ['rec_ack_post', _('A responder is checking the situation on site.')]],
+		'pre' => _('Lone worker alarm taken charge of for extension'),
+		'post' => _('A responder is checking the situation on site.')],
 	['title' => _('Disarmed — played when an operator dials 703'),               'aud' => 'speakers',
-		'pre' => ['rec_disarmed_pre', _('Lone worker system disarmed for extension')],
+		'pre' => _('Lone worker system disarmed for extension'),
 		'post' => null],
 	['title' => _('Emergency call — played to the responders during the alarm'), 'aud' => 'phone',
-		'pre' => ['rec_call_pre', _('Lone worker alarm. The operator of extension')],
-		'post' => ['rec_call_post', _('did not confirm. Press 1 to take charge of the alarm.')]],
+		'pre' => _('Lone worker alarm. The operator of extension'),
+		'post' => _('did not confirm. Press one to take charge of the alarm.')],
 ];
 
 $audienceHtml = function ($aud) {
@@ -441,32 +429,21 @@ $audienceHtml = function ($aud) {
 	return '<div class="alert alert-info" style="padding:6px 10px;margin-bottom:10px"><i class="fa fa-volume-up"></i> '
 		. sprintf(_('Heard on the speakers (paging group %s) — everyone near the speakers hears this.'), '<span class="label label-primary lw-pg-num">91</span>') . '</div>';
 };
-
-$recSelect = function ($key, $partLabel, $text) use ($recOptions, $s) {
-	echo '<div class="row" style="margin:6px 0"><div class="col-md-4"><label class="control-label" for="' . $key . '">' . $partLabel . '</label>'
-		. '<div class="text-muted" style="font-style:italic;font-size:12px">&ldquo;' . htmlspecialchars($text) . '&rdquo;</div></div>'
-		. '<div class="col-md-8"><select class="form-control" id="' . $key . '" name="' . $key . '">' . $recOptions($s[$key]) . '</select></div></div>';
-};
 ?>
 <?php foreach ($groups as $g): ?>
 <div class="panel panel-<?php echo $g['aud'] === 'phone' ? 'warning' : 'info' ?>">
 	<div class="panel-heading"><strong><?php echo $g['title'] ?></strong></div>
 	<div class="panel-body">
 		<?php echo $audienceHtml($g['aud']); ?>
-		<blockquote style="font-size:14px;margin:0 0 12px">
-			&ldquo;<?php echo htmlspecialchars($g['pre'][1]); ?>
+		<blockquote style="font-size:14px;margin:0">
+			&ldquo;<?php echo htmlspecialchars($g['pre']); ?>
 			<span class="label label-success lw-ex-num">301</span>
-			<?php if ($g['post']) echo htmlspecialchars($g['post'][1]); ?>
+			<?php if ($g['post']) echo htmlspecialchars($g['post']); ?>
 			<?php if (!empty($g['callnum'])): ?><span class="label label-warning lw-cn-num">702</span><?php endif; ?>&rdquo;
 		</blockquote>
-		<?php
-		$recSelect($g['pre'][0], _('Recording — part 1 (before the number)'), $g['pre'][1]);
-		if ($g['post']) { $recSelect($g['post'][0], _('Recording — part 2 (after the number)'), $g['post'][1]); }
-		if (!empty($g['callnum'])) {
-			echo '<p class="help-block" style="margin-top:6px"><i class="fa fa-info-circle"></i> '
-				. _('The check-in number is spoken automatically here (SayDigits), taken from the Check-in feature code above — do not record it into the audio.') . '</p>';
-		}
-		?>
+		<?php if (!empty($g['callnum'])): ?>
+		<p class="help-block" style="margin-top:6px"><i class="fa fa-info-circle"></i> <?php echo _('The check-in number is spoken automatically here (SayDigits), taken from the Check-in feature code above.') ?></p>
+		<?php endif; ?>
 	</div>
 </div>
 <?php endforeach; ?>

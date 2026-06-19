@@ -2,22 +2,14 @@
 // Lone Worker — dialplan generation.
 if (!defined('FREEPBX_IS_AUTH')) { /* may also be included during reload */ }
 
-/** Return the filename of a System Recording given its id, or '' if not valid. */
-function loneworker_rec($id) {
-	if (empty($id)) { return ''; }
-	if (!function_exists('recordings_get_file')) { return ''; }
-	$f = recordings_get_file($id);
-	return $f ?: '';
-}
-
-/** Asterisk sounds directory (where our bundled default clips are installed). */
+/** Asterisk sounds directory (where the built-in announcement clips are installed). */
 function loneworker_sounds_dir() {
 	try { $base = \FreePBX::Config()->get('ASTVARLIBDIR'); } catch (\Throwable $e) { $base = ''; }
 	return rtrim($base ?: '/var/lib/asterisk', '/') . '/sounds';
 }
 
-/** Playback path of a bundled default clip for an announcement segment (e.g. 'armed-pre'),
- *  or '' if that default is not installed. Used as a fallback when no System Recording is set. */
+/** Playback path of the built-in clip for an announcement segment (e.g. 'armed-pre'),
+ *  or '' if it is not installed. The audio set is fixed and ships with the module. */
 function loneworker_default($seg) {
 	$rel = 'loneworker/lw-' . $seg;
 	$dir = loneworker_sounds_dir();
@@ -25,12 +17,6 @@ function loneworker_default($seg) {
 		if (is_file($dir . '/' . $rel . '.' . $ext)) { return $rel; }
 	}
 	return '';
-}
-
-/** A System Recording if chosen, otherwise the bundled Italian default for that segment. */
-function loneworker_rec_or_default($id, $seg) {
-	$f = loneworker_rec($id);
-	return $f !== '' ? $f : loneworker_default($seg);
 }
 
 /** Add an announcement block (pre + SayDigits of the extension + post) to an extension.
@@ -87,12 +73,13 @@ function loneworker_get_config($engine) {
 	$ac = 'app-loneworker-announce';
 	$checkin = $actions['checkin']; // check-in number, spoken dynamically
 	$lang = trim((string) ($s['digit_language'] ?? 'it')) ?: 'it';
-	loneworker_add_ann($ext, $ac, 'arm',      loneworker_rec_or_default($s['rec_armed_pre'], 'armed-pre'),         loneworker_rec_or_default($s['rec_armed_post'], 'armed-post'),         $checkin, $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'confirm',  loneworker_rec_or_default($s['rec_confirmed_pre'], 'confirmed-pre'), loneworker_rec_or_default($s['rec_confirmed_post'], 'confirmed-post'), '',       $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'reminder', loneworker_rec_or_default($s['rec_reminder_pre'], 'reminder-pre'),   loneworker_rec_or_default($s['rec_reminder_post'], 'reminder-post'),   $checkin, $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'alarm',    loneworker_rec_or_default($s['rec_alarm_pre'], 'alarm-pre'),         loneworker_rec_or_default($s['rec_alarm_post'], 'alarm-post'),         '',       $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'ack',      loneworker_rec_or_default($s['rec_ack_pre'], 'ack-pre'),             loneworker_rec_or_default($s['rec_ack_post'], 'ack-post'),             '',       $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'disarm',   loneworker_rec_or_default($s['rec_disarmed_pre'], 'disarmed-pre'),   '',                                                                   '',       $lang, $agi);
+	// Audio is the built-in, fixed set shipped with the module (not user-editable).
+	loneworker_add_ann($ext, $ac, 'arm',      loneworker_default('armed-pre'),     loneworker_default('armed-post'),     $checkin, $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'confirm',  loneworker_default('confirmed-pre'), loneworker_default('confirmed-post'), '',       $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'reminder', loneworker_default('reminder-pre'),  loneworker_default('reminder-post'),  $checkin, $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'alarm',    loneworker_default('alarm-pre'),     loneworker_default('alarm-post'),     '',       $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'ack',      loneworker_default('ack-pre'),       loneworker_default('ack-post'),       '',       $lang, $agi);
+	loneworker_add_ann($ext, $ac, 'disarm',   loneworker_default('disarmed-pre'),  '',                                   '',       $lang, $agi);
 
 	// --- Emergency cascade: ring ALL responders simultaneously --------------
 	// One channel Dials every responder at once. The first one to press 1 in the
@@ -136,8 +123,8 @@ function loneworker_get_config($engine) {
 	// Confirmation routine on each ANSWERED responder: up to 3 prompts; press 1 = take charge
 	// (AGI ack + Return → wins the Dial). If no confirm, hang up so the cascade moves on.
 	$cf    = 'app-loneworker-confirm';
-	$cpre  = loneworker_rec_or_default($s['rec_call_pre'], 'call-pre');
-	$cpost = loneworker_rec_or_default($s['rec_call_post'], 'call-post');
+	$cpre  = loneworker_default('call-pre');
+	$cpost = loneworker_default('call-post');
 	$ckey  = preg_match('/^[0-9*]$/', (string) ($s['confirm_key'] ?? '1')) ? (string) $s['confirm_key'] : '1'; // key to take charge
 	$ctmo  = max(3, (int) ($s['confirm_timeout'] ?? 15)); // seconds to wait for the key on each prompt
 	$ext->add($cf, 's', '', new ext_answer(''));
