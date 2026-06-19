@@ -2,11 +2,12 @@
 	<rawname>loneworker</rawname>
 	<repo>local</repo>
 	<name>Lone Worker</name>
-	<version>1.0.2</version>
+	<version>1.0.3</version>
 	<publisher>Tesseract Technologies</publisher>
 	<license>GPLv3+</license>
 	<licenselink>http://www.gnu.org/licenses/gpl-3.0.txt</licenselink>
 	<changelog>
+		*1.0.3* Move the announcement queue to a DB table: the kvstore was cached per-process, so the CLI and the drain AGI clobbered each other's queue (lost/duplicated announcements). Single drain channel now enforced via live channel state.
 		*1.0.2* Fix back-to-back announcements: a single paging channel now drains the whole queue (no re-paging collision), so two simultaneous alarms are both announced on the speakers.
 		*1.0.1* Ship the Italian announcement audio built into the module (fixed set, not editable); add per-message "Play on speakers" preview buttons.
 		*1.0.0* First release: native multi-operator lone worker monitoring.
@@ -35,6 +36,13 @@
 			<field name="event" type="string" length="24" notnull="true"/>
 			<field name="ext" type="string" length="16" notnull="false"/>
 			<field name="payload" type="text" notnull="false"/>
+		</table>
+		<table name="loneworker_announce_queue">
+			<field name="id" type="integer" primarykey="true" autoincrement="true"/>
+			<field name="prio" type="integer" notnull="true" default="3"/>
+			<field name="ts" type="integer" notnull="true" default="0"/>
+			<field name="msg" type="string" length="16" notnull="true"/>
+			<field name="ext" type="string" length="16" notnull="false"/>
 		</table>
 	</database>
 	<depends>

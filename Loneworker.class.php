@@ -77,6 +77,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		@rmdir($dst);
 		try { $this->db->query('DROP TABLE IF EXISTS loneworker_sessions'); } catch (\Throwable $e) {}
 		try { $this->db->query('DROP TABLE IF EXISTS loneworker_events'); } catch (\Throwable $e) {}
+		try { $this->db->query('DROP TABLE IF EXISTS loneworker_announce_queue'); } catch (\Throwable $e) {}
 	}
 
 	/** Copy the AGI script into /var/lib/asterisk/agi-bin and make it executable. */
@@ -223,10 +224,6 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		} catch (\Throwable $e) {}
 		return $conflicts;
 	}
-
-	// speaker gate = timestamp until which the speakers are busy (avoids overlapping announcements)
-	private function speakerBusy()    { return (int) $this->getConfig('speaker_until') > time(); }
-	private function setSpeakerGate($secs = 12) { $this->setConfig('speaker_until', time() + (int) $secs); }
 
 	// ----------------------------------------------------------- DB CRUD
 
@@ -430,49 +427,69 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		}
 	}
 
-	private function getAnnounceQueue() {
-		$raw = (string) $this->getConfig('announce_queue');
-		$q = $raw !== '' ? json_decode($raw, true) : [];
-		return is_array($q) ? $q : [];
-	}
-	private function saveAnnounceQueue($q) { $this->setConfig('announce_queue', json_encode(array_values($q))); }
+	/** accountcode used to tag the queue-drain paging channel (one at a time). */
+	const DRAIN_ACCOUNT = 'lwdrain';
 
-	/** Enqueue an announcement (dedup identical pending msg+ext) and make sure a drain channel plays it. */
+	private function queueCount() {
+		try { return (int) $this->db->query('SELECT COUNT(*) FROM loneworker_announce_queue')->fetchColumn(); }
+		catch (\Throwable $e) { return 0; }
+	}
+
+	/** Enqueue an announcement (dedup identical pending msg+ext) and make sure a drain channel plays it.
+	 *  The queue lives in a DB table (NOT kvstore, which is cached per-process: the CLI and the drain
+	 *  AGI run in separate processes and would clobber each other's view of a cached queue). */
 	public function enqueueAnnounce($msg, $ext) {
 		$ext = (string) $ext;
-		$q = $this->getAnnounceQueue();
-		foreach ($q as $it) {
-			if (($it['msg'] ?? '') === $msg && (string) ($it['ext'] ?? '') === $ext) {
-				$this->ensureDrainChannel(); // already pending: just make sure the queue is draining
-				return true;
+		try {
+			$chk = $this->db->prepare('SELECT COUNT(*) FROM loneworker_announce_queue WHERE msg=? AND ext=?');
+			$chk->execute([$msg, $ext]);
+			if ((int) $chk->fetchColumn() === 0) {
+				$ins = $this->db->prepare('INSERT INTO loneworker_announce_queue (prio, ts, msg, ext) VALUES (?,?,?,?)');
+				$ins->execute([$this->announcePriority($msg), time(), $msg, $ext]);
+				$this->logEvent('PAGING_QUEUED', $ext, ['msg' => $msg]);
 			}
-		}
-		$q[] = ['msg' => $msg, 'ext' => $ext, 'ts' => time()];
-		$this->saveAnnounceQueue($q);
-		$this->logEvent('PAGING_QUEUED', $ext, ['msg' => $msg, 'depth' => count($q)]);
+		} catch (\Throwable $e) { $this->logEvent('ERROR', $ext, ['detail' => 'enqueue']); }
 		$this->ensureDrainChannel();
 		return true;
 	}
 
+	/** True if a queue-drain paging channel is currently live (checked against Asterisk, not kvstore). */
+	private function drainChannelActive($ast) {
+		$resp = $ast->Command('core show channels concise');
+		$text = is_array($resp) ? ($resp['data'] ?? '') : (string) $resp;
+		foreach (preg_split('/\r?\n/', (string) $text) as $line) {
+			if ($line === '' || strpos($line, '!') === false) { continue; }
+			if (in_array(self::DRAIN_ACCOUNT, explode('!', $line), true)) { return true; }
+		}
+		return false;
+	}
+
 	/** Start ONE paging channel that drains the whole announcement queue, if none is active. */
 	public function ensureDrainChannel() {
-		if ($this->speakerBusy()) { return false; }       // a drain channel is already running
-		if (empty($this->getAnnounceQueue())) { return false; }
-		$s = $this->getSettings();
-		$pg = trim((string) $s['paging_group']);
-		if ($pg === '') { $this->logEvent('ERROR', null, ['detail' => 'no-paging-group']); return false; }
+		if ($this->queueCount() === 0) { return false; }
 		$ast = $this->freepbx->astman;
 		if (!$ast || !$ast->connected()) { $this->logEvent('ERROR', null, ['detail' => 'ami-down']); return false; }
-		$this->setSpeakerGate(120);  // held (and refreshed by nextAnnouncement) while draining
-		$ast->Originate([
-			'Channel'  => 'Local/' . $pg . '@from-internal',
-			'Context'  => 'app-loneworker-announce',
-			'Exten'    => 'drain',
-			'Priority' => 1,
-			'Async'    => 'true',
-		]);
-		$this->logEvent('PAGING', null, ['drain' => true, 'pg' => $pg]);
-		return true;
+		// serialise the "active?" check + originate across processes (best-effort lock)
+		$locked = false;
+		try { $locked = ($this->db->query("SELECT GET_LOCK('loneworker_drain',3)")->fetchColumn() == 1); } catch (\Throwable $e) {}
+		try {
+			if ($this->drainChannelActive($ast)) { return false; } // one is already draining the queue
+			$s = $this->getSettings();
+			$pg = trim((string) $s['paging_group']);
+			if ($pg === '') { $this->logEvent('ERROR', null, ['detail' => 'no-paging-group']); return false; }
+			$ast->Originate([
+				'Channel'  => 'Local/' . $pg . '@from-internal',
+				'Context'  => 'app-loneworker-announce',
+				'Exten'    => 'drain',
+				'Priority' => 1,
+				'Account'  => self::DRAIN_ACCOUNT,
+				'Async'    => 'true',
+			]);
+			$this->logEvent('PAGING', null, ['drain' => true, 'pg' => $pg]);
+			return true;
+		} finally {
+			if ($locked) { try { $this->db->query("SELECT RELEASE_LOCK('loneworker_drain')"); } catch (\Throwable $e) {} }
+		}
 	}
 
 	/** Playback path of a built-in clip (e.g. 'armed-pre'), or '' if not installed. */
@@ -484,33 +501,28 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		return '';
 	}
 
-	/** Pop the next announcement (highest priority, then oldest) and return what the drain
-	 *  dialplan needs to render it; null when the queue is empty (also releases the gate).
+	/** Pop the next announcement (highest priority, then oldest) and return what the drain dialplan
+	 *  needs to render it; null when the queue is empty. Atomic pop = DELETE the row we selected.
 	 *  Called by the AGI 'nextann' verb on each loop iteration of the drain channel. */
 	public function nextAnnouncement() {
-		$q = $this->getAnnounceQueue();
-		if (empty($q)) { $this->setConfig('speaker_until', '0'); return null; }
-		$best = 0;
-		foreach ($q as $i => $it) {
-			$ip = $this->announcePriority($it['msg'] ?? '');         $its = (int) ($it['ts'] ?? 0);
-			$bp = $this->announcePriority($q[$best]['msg'] ?? '');   $bts = (int) ($q[$best]['ts'] ?? 0);
-			if ($ip < $bp || ($ip === $bp && $its < $bts)) { $best = $i; }
-		}
-		$item = $q[$best];
-		unset($q[$best]);
-		$this->saveAnnounceQueue($q);
-		$this->setSpeakerGate(120); // keep the gate held while we are still draining
-		$s = $this->getSettings();
-		$map = ['arm' => 'armed', 'confirm' => 'confirmed', 'reminder' => 'reminder', 'alarm' => 'alarm', 'ack' => 'ack', 'disarm' => 'disarmed', 'call' => 'call'];
-		$base = $map[$item['msg']] ?? $item['msg'];
-		$say = '';
-		if (in_array($item['msg'], ['arm', 'reminder'], true)) {
-			$say = (new \featurecode('loneworker', 'checkin'))->getCodeActive() ?: '';
-		}
-		$lang = trim((string) ($s['digit_language'] ?? 'it')) ?: 'it';
-		$this->logEvent('PAGING', $item['ext'], ['msg' => $item['msg']]);
-		return ['msg' => $item['msg'], 'ext' => (string) $item['ext'], 'pre' => $this->clipPath($base . '-pre'),
-			'post' => $this->clipPath($base . '-post'), 'say' => $say, 'lang' => $lang];
+		try {
+			for ($try = 0; $try < 5; $try++) {
+				$row = $this->db->query('SELECT id, msg, ext FROM loneworker_announce_queue ORDER BY prio ASC, id ASC LIMIT 1')->fetch(\PDO::FETCH_ASSOC);
+				if (!$row) { return null; }
+				$del = $this->db->prepare('DELETE FROM loneworker_announce_queue WHERE id=?');
+				$del->execute([$row['id']]);
+				if ($del->rowCount() < 1) { continue; } // another drainer took it; try the next row
+				$s = $this->getSettings();
+				$map = ['arm' => 'armed', 'confirm' => 'confirmed', 'reminder' => 'reminder', 'alarm' => 'alarm', 'ack' => 'ack', 'disarm' => 'disarmed', 'call' => 'call'];
+				$base = $map[$row['msg']] ?? $row['msg'];
+				$say = in_array($row['msg'], ['arm', 'reminder'], true) ? ((new \featurecode('loneworker', 'checkin'))->getCodeActive() ?: '') : '';
+				$lang = trim((string) ($s['digit_language'] ?? 'it')) ?: 'it';
+				$this->logEvent('PAGING', $row['ext'], ['msg' => $row['msg']]);
+				return ['msg' => $row['msg'], 'ext' => (string) $row['ext'], 'pre' => $this->clipPath($base . '-pre'),
+					'post' => $this->clipPath($base . '-post'), 'say' => $say, 'lang' => $lang];
+			}
+		} catch (\Throwable $e) {}
+		return null;
 	}
 
 	/** Low-level: play ONE announcement on the speakers now, used by the GUI preview
@@ -810,7 +822,6 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	public function testAnnounceMsg($msg) {
 		if (!in_array($msg, self::PREVIEW_MSGS, true)) { return false; }
 		$s = $this->getSettings();
-		$this->setConfig('speaker_until', '0'); // play now even if the gate is busy
 		$ok = $this->announceNow($msg, '301', $s, self::TEST_ACCOUNT);
 		$this->logEvent('TEST', '301', ['what' => 'announce', 'msg' => $msg, 'ok' => $ok]);
 		return $ok;
