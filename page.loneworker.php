@@ -14,9 +14,13 @@ switch ($view) {
 		$heading = _('Lone Worker: Event history');
 		$content = load_view(__DIR__ . '/views/events.php', ['events' => $lw->getEventsForView(200)]);
 	break;
-	default:
+	case 'sessions':
 		$heading = _('Lone Worker: Active sessions');
 		$content = load_view(__DIR__ . '/views/grid.php', ['settings' => $lw->getSettings()]);
+	break;
+	default:
+		$heading = _('Lone Worker: Dashboard');
+		$content = load_view(__DIR__ . '/views/dashboard.php', ['settings' => $lw->getSettings()]);
 	break;
 }
 ?>

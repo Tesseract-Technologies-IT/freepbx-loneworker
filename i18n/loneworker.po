@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: loneworker 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-19 08:27+0200\n"
+"POT-Creation-Date: 2026-06-19 11:25+0200\n"
 "PO-Revision-Date: 2026-06-18 15:13+0200\n"
 "Last-Translator: Tesseract Technologies\n"
 "Language-Team: Italian\n"
@@ -26,160 +26,160 @@ msgid "Lone Worker: Disarm"
 msgstr "Uomo a Terra: Disarma"
 
 # ---- feature code conflict detection ----
-#: Loneworker.class.php:163
+#: Loneworker.class.php:164
 #, php-format
 msgid "extension %s (%s)"
 msgstr "interno %s (%s)"
 
-#: Loneworker.class.php:171
+#: Loneworker.class.php:172
 #, php-format
 msgid "feature code %s/%s"
 msgstr "feature code %s/%s"
 
-#: Loneworker.class.php:181 views/settings.php:213
+#: Loneworker.class.php:182 views/settings.php:213
 msgid "Arm code"
 msgstr "Codice di armamento"
 
-#: Loneworker.class.php:181 views/settings.php:214
+#: Loneworker.class.php:182 views/settings.php:214
 msgid "Check-in code"
 msgstr "Codice di conferma"
 
-#: Loneworker.class.php:181 views/settings.php:215
+#: Loneworker.class.php:182 views/settings.php:215
 msgid "Disarm code"
 msgstr "Codice di disarmo"
 
-#: Loneworker.class.php:188
+#: Loneworker.class.php:189
 #, php-format
 msgid "%s is the same as the %s"
 msgstr "%s è uguale al %s"
 
-#: Loneworker.class.php:190
+#: Loneworker.class.php:191
 #, php-format
 msgid "%s is already used by %s"
 msgstr "%s è già usato da %s"
 
-#: Loneworker.class.php:220
+#: Loneworker.class.php:221
 msgid "Lone Worker: some feature codes were not applied (conflict)"
 msgstr "Uomo a Terra: alcuni feature code non sono stati applicati (conflitto)"
 
-#: Loneworker.class.php:666
+#: Loneworker.class.php:710
 msgid "No paging group set: announcements on the speakers will not play."
 msgstr "Nessun paging group impostato: gli annunci sulle casse non verranno riprodotti."
 
-#: Loneworker.class.php:670
+#: Loneworker.class.php:714
 #, php-format
 msgid "Paging group %s exists."
 msgstr "Il paging group %s esiste."
 
-#: Loneworker.class.php:670
+#: Loneworker.class.php:714
 #, php-format
 msgid "Paging group %s does not exist."
 msgstr "Il paging group %s non esiste."
 
-#: Loneworker.class.php:675
+#: Loneworker.class.php:719
 msgid "in sequence"
 msgstr "in sequenza"
 
-#: Loneworker.class.php:675
+#: Loneworker.class.php:719
 msgid "all at once"
 msgstr "tutti insieme"
 
-#: Loneworker.class.php:676
+#: Loneworker.class.php:720
 msgid "No alarm responders configured (internal or external)."
 msgstr "Nessun soccorritore configurato (interno o esterno)."
 
-#: Loneworker.class.php:677
+#: Loneworker.class.php:721
 #, php-format
 msgid "%d alarm responder(s) configured, called %s."
 msgstr "%d soccorritore/i configurato/i, chiamati %s."
 
-#: Loneworker.class.php:688
+#: Loneworker.class.php:732
 msgid "There are external responder numbers but no outbound routes exist: the alarm cannot call them."
 msgstr "Ci sono numeri esterni ma non esistono outbound route: l'allarme non può chiamarli."
 
-#: Loneworker.class.php:692
+#: Loneworker.class.php:736
 #, php-format
 msgid "No enabled outbound route matches external number %s."
 msgstr "Nessuna outbound route abilitata corrisponde al numero esterno %s."
 
-#: Loneworker.class.php:693
+#: Loneworker.class.php:737
 #, php-format
 msgid "External number %s only matches a route filtered by Caller ID; the alarm Caller ID may not pass it."
 msgstr "Il numero esterno %s corrisponde solo a una route filtrata per Caller ID; il Caller ID dell'allarme potrebbe non superarla."
 
-#: Loneworker.class.php:694
+#: Loneworker.class.php:738
 #, php-format
 msgid "External number %s matches route \"%s\" but its trunk is disabled."
 msgstr "Il numero esterno %s corrisponde alla route \"%s\" ma il suo trunk è disabilitato."
 
-#: Loneworker.class.php:695
+#: Loneworker.class.php:739
 #, php-format
 msgid "External number %s will route out via \"%s\"."
 msgstr "Il numero esterno %s uscirà tramite \"%s\"."
 
-#: Loneworker.class.php:699
+#: Loneworker.class.php:743
 #, php-format
 msgid "External calls will present Caller ID %s."
 msgstr "Le chiamate esterne presenteranno il Caller ID %s."
 
-#: Loneworker.class.php:702
+#: Loneworker.class.php:746
 msgid "No alarm Caller ID set: external calls go out as the down worker extension. If the trunk/route has no outbound CID, the carrier may receive an internal number. Set a service extension or an explicit Caller ID."
 msgstr "Nessun Caller ID d'allarme impostato: le chiamate esterne escono come l'interno dell'operatore caduto. Se trunk/route non hanno un outbound CID, l'operatore telefonico potrebbe ricevere un numero interno. Imposta un interno di servizio o un Caller ID esplicito."
 
-#: Loneworker.class.php:705
+#: Loneworker.class.php:749
 #, php-format
 msgid "Service extension %s has no outbound Caller ID: the carrier may receive an internal number. Set its Outbound CID or an explicit Caller ID."
 msgstr "L'interno di servizio %s non ha un outbound Caller ID: l'operatore telefonico potrebbe ricevere un numero interno. Imposta il suo Outbound CID o un Caller ID esplicito."
 
-#: Loneworker.class.php:706
+#: Loneworker.class.php:750
 #, php-format
 msgid "External calls will use the outbound Caller ID of extension %s (%s)."
 msgstr "Le chiamate esterne useranno l'outbound Caller ID dell'interno %s (%s)."
 
-#: Loneworker.class.php:717
+#: Loneworker.class.php:761
 #, php-format
 msgid "Built-in announcement audio is missing (%s): reinstall the module."
 msgstr "Audio degli annunci integrato mancante (%s): reinstalla il modulo."
 
-#: Loneworker.class.php:718
+#: Loneworker.class.php:762
 msgid "Built-in announcement audio is installed."
 msgstr "Audio degli annunci integrato installato."
 
-#: Loneworker.class.php:722
+#: Loneworker.class.php:766
 #, php-format
 msgid "Feature code \"%s\" is not active."
 msgstr "Il feature code \"%s\" non è attivo."
 
-#: Loneworker.class.php:728
+#: Loneworker.class.php:772
 msgid "Asterisk Manager (AMI) reachable."
 msgstr "Asterisk Manager (AMI) raggiungibile."
 
-#: Loneworker.class.php:728
+#: Loneworker.class.php:772
 msgid "Asterisk Manager (AMI) not reachable: announcements and calls will fail."
 msgstr "Asterisk Manager (AMI) non raggiungibile: annunci e chiamate falliranno."
 
-#: Loneworker.class.php:732
+#: Loneworker.class.php:776
 msgid "Monitoring job is registered."
 msgstr "Il job di monitoraggio è registrato."
 
-#: Loneworker.class.php:732
+#: Loneworker.class.php:776
 msgid "Monitoring job is not registered."
 msgstr "Il job di monitoraggio non è registrato."
 
-#: Loneworker.class.php:736
+#: Loneworker.class.php:780
 msgid "First reminder is not before the timeout: reminders will not play."
 msgstr "Il primo promemoria non è prima del timeout: i promemoria non verranno riprodotti."
 
-#: Loneworker.class.php:737
+#: Loneworker.class.php:781
 msgid "Alarm repeat interval is shorter than the ring time: alarm rounds may overlap."
 msgstr "L'intervallo di ripetizione allarme è inferiore alla durata squillo: i giri d'allarme potrebbero sovrapporsi."
 
 # ---- action bar ----
-#: Loneworker.class.php:748
+#: Loneworker.class.php:792
 msgid "Reset"
 msgstr "Ripristina"
 
-#: Loneworker.class.php:749
+#: Loneworker.class.php:793
 msgid "Submit"
 msgstr "Salva"
 
@@ -195,65 +195,237 @@ msgstr "Uomo a Terra: Storico eventi"
 msgid "Lone Worker: Active sessions"
 msgstr "Uomo a Terra: Sessioni attive"
 
-#: views/events.php:5
+#: page.loneworker.php:22
+msgid "Lone Worker: Dashboard"
+msgstr "Uomo a Terra: Dashboard"
+
+#: views/dashboard.php:6 views/dashboard.php:98 views/events.php:5
 msgid "Armed"
 msgstr "Armato"
 
-#: views/events.php:6
+#: views/dashboard.php:6 views/events.php:6
 msgid "Check-in"
 msgstr "Conferma"
 
-#: views/events.php:7
+#: views/dashboard.php:6 views/events.php:7
 msgid "Disarmed"
 msgstr "Disarmato"
 
-#: views/events.php:8
+#: views/dashboard.php:7 views/events.php:8
 msgid "Reminder"
 msgstr "Promemoria"
 
-#: views/events.php:9
+#: views/dashboard.php:7 views/events.php:9
 msgid "Alarm"
 msgstr "Allarme"
 
-#: views/events.php:10
+#: views/dashboard.php:7 views/events.php:10
 msgid "Alarm re-call"
 msgstr "Richiamo allarme"
 
+#: views/dashboard.php:8 views/dashboard.php:27 views/dashboard.php:99
 #: views/events.php:11
 msgid "Taken charge"
 msgstr "Preso in carico"
 
-#: views/events.php:12
+#: views/dashboard.php:8 views/events.php:12
 msgid "Taken charge (held)"
 msgstr "Preso in carico (in attesa)"
 
-#: views/events.php:13
+#: views/dashboard.php:8 views/events.php:13
 msgid "Calling responders"
 msgstr "Chiamata soccorritori"
 
-#: views/events.php:14
+#: views/dashboard.php:9 views/events.php:14
 msgid "Announcement"
 msgstr "Annuncio"
 
-#: views/events.php:15
+#: views/dashboard.php:9 views/events.php:15
 msgid "Announcement queued"
 msgstr "Annuncio in coda"
 
-#: views/events.php:16
+#: views/dashboard.php:9 views/events.php:16
 msgid "Announcement skipped"
 msgstr "Annuncio saltato"
 
-#: views/events.php:17
+#: views/dashboard.php:10 views/events.php:17
 msgid "Test"
 msgstr "Prova"
 
-#: views/events.php:18
+#: views/dashboard.php:10 views/events.php:18
 msgid "Error"
 msgstr "Errore"
 
-#: views/events.php:22
+#: views/dashboard.php:14
+msgid "Dashboard"
+msgstr "Dashboard"
+
+#: views/dashboard.php:15 views/events.php:22
 msgid "Active sessions"
 msgstr "Sessioni attive"
+
+#: views/dashboard.php:16 views/grid.php:32
+msgid "Event history"
+msgstr "Storico eventi"
+
+# ---- grid ----
+#: views/dashboard.php:17 views/grid.php:31
+msgid "Settings"
+msgstr "Impostazioni"
+
+#: views/dashboard.php:25
+msgid "Armed now"
+msgstr "Armati ora"
+
+#: views/dashboard.php:26
+msgid "In alarm now"
+msgstr "In allarme ora"
+
+#: views/dashboard.php:28
+msgid "Armed today"
+msgstr "Armati oggi"
+
+#: views/dashboard.php:29
+msgid "Alarms today"
+msgstr "Allarmi oggi"
+
+#: views/dashboard.php:30 views/dashboard.php:99 views/dashboard.php:127
+msgid "Avg. take-charge"
+msgstr "Tempo medio presa in carico"
+
+#: views/dashboard.php:49
+msgid "Live sessions"
+msgstr "Sessioni in tempo reale"
+
+#: views/dashboard.php:52 views/dashboard.php:97 views/events.php:30
+#: views/grid.php:40
+msgid "Extension"
+msgstr "Interno"
+
+#: views/dashboard.php:52 views/dashboard.php:97 views/events.php:31
+#: views/grid.php:41
+msgid "Operator"
+msgstr "Operatore"
+
+#: views/dashboard.php:53 views/grid.php:42
+msgid "State"
+msgstr "Stato"
+
+#: views/dashboard.php:53
+msgid "Time left / since"
+msgstr "Tempo rimasto / da"
+
+#: views/dashboard.php:62
+msgid "Announcement queue (speakers)"
+msgstr "Coda annunci (altoparlanti)"
+
+#: views/dashboard.php:67
+msgid "Live events"
+msgstr "Eventi in tempo reale"
+
+#: views/dashboard.php:76
+msgid "Reports"
+msgstr "Report"
+
+#: views/dashboard.php:79
+msgid "Today"
+msgstr "Oggi"
+
+#: views/dashboard.php:80
+msgid "Last 7 days"
+msgstr "Ultimi 7 giorni"
+
+#: views/dashboard.php:81
+msgid "Last 30 days"
+msgstr "Ultimi 30 giorni"
+
+#: views/dashboard.php:83
+msgid "Export CSV"
+msgstr "Esporta CSV"
+
+#: views/dashboard.php:88
+msgid "Alarms vs check-ins over time"
+msgstr "Allarmi vs conferme nel tempo"
+
+#: views/dashboard.php:91 views/dashboard.php:98
+msgid "Alarms"
+msgstr "Allarmi"
+
+#: views/dashboard.php:92
+msgid "Check-ins"
+msgstr "Conferme"
+
+#: views/dashboard.php:94
+msgid "Per operator"
+msgstr "Per operatore"
+
+# ---- v2.0: grid JS labels + placeholders ----
+#: views/dashboard.php:112 views/grid.php:7
+msgid "ARMED"
+msgstr "ARMATO"
+
+#: views/dashboard.php:113 views/grid.php:8
+msgid "ALARM"
+msgstr "ALLARME"
+
+#: views/dashboard.php:114 views/grid.php:9
+msgid "TAKEN CHARGE"
+msgstr "PRESA IN CARICO"
+
+#: views/dashboard.php:115
+msgid "No active sessions."
+msgstr "Nessuna sessione attiva."
+
+#: views/dashboard.php:116
+msgid "Nothing queued — speakers idle."
+msgstr "Niente in coda — altoparlanti liberi."
+
+#: views/dashboard.php:117
+msgid "now playing / next:"
+msgstr "in riproduzione / prossimi:"
+
+#: views/dashboard.php:118
+#, php-format
+msgid "%s left"
+msgstr "%s rimanenti"
+
+#: views/dashboard.php:119
+#, php-format
+msgid "%s ago"
+msgstr "%s fa"
+
+#: views/dashboard.php:120
+msgid "updated"
+msgstr "aggiornato"
+
+#: views/dashboard.php:121
+msgid "LIVE"
+msgstr "LIVE"
+
+#: views/dashboard.php:122
+msgid "AMI OK"
+msgstr "AMI OK"
+
+#: views/dashboard.php:123
+msgid "AMI DOWN"
+msgstr "AMI NON RAGGIUNGIBILE"
+
+#: views/dashboard.php:124 views/settings.php:92
+msgid "Ready for alarms"
+msgstr "Pronto per gli allarmi"
+
+#: views/dashboard.php:125
+#, php-format
+msgid "%d problem(s), %d warning(s)"
+msgstr "%d problema/i, %d avviso/i"
+
+#: views/dashboard.php:126
+msgid "Total"
+msgstr "Totale"
+
+#: views/dashboard.php:128
+msgid "—"
+msgstr "—"
 
 #: views/events.php:23 views/grid.php:33
 msgid "Refresh"
@@ -267,14 +439,6 @@ msgstr "Ora"
 msgid "Event"
 msgstr "Evento"
 
-#: views/events.php:30 views/grid.php:40
-msgid "Extension"
-msgstr "Interno"
-
-#: views/events.php:31 views/grid.php:41
-msgid "Operator"
-msgstr "Operatore"
-
 #: views/events.php:32
 msgid "Details"
 msgstr "Dettagli"
@@ -282,19 +446,6 @@ msgstr "Dettagli"
 #: views/events.php:57
 msgid "No events yet."
 msgstr "Nessun evento ancora."
-
-# ---- v2.0: grid JS labels + placeholders ----
-#: views/grid.php:7
-msgid "ARMED"
-msgstr "ARMATO"
-
-#: views/grid.php:8
-msgid "ALARM"
-msgstr "ALLARME"
-
-#: views/grid.php:9
-msgid "TAKEN CHARGE"
-msgstr "PRESA IN CARICO"
 
 #: views/grid.php:10
 msgid "Disarm"
@@ -332,19 +483,6 @@ msgstr "Apri il check di prontezza"
 #: views/grid.php:28
 msgid "Readiness: ready for alarms."
 msgstr "Prontezza: pronto per gli allarmi."
-
-# ---- grid ----
-#: views/grid.php:31
-msgid "Settings"
-msgstr "Impostazioni"
-
-#: views/grid.php:32
-msgid "Event history"
-msgstr "Storico eventi"
-
-#: views/grid.php:42
-msgid "State"
-msgstr "Stato"
 
 #: views/grid.php:43
 msgid "Armed at"
@@ -435,10 +573,6 @@ msgstr "Problemi da risolvere prima che gli allarmi funzionino in modo affidabil
 #: views/settings.php:92
 msgid "Ready, with warnings"
 msgstr "Pronto, con avvisi"
-
-#: views/settings.php:92
-msgid "Ready for alarms"
-msgstr "Pronto per gli allarmi"
 
 #: views/settings.php:97
 msgid "Readiness check"

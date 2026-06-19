@@ -207,7 +207,173 @@ function lwPlayStop() {
 	});
 }
 
+// ----------------------------------------- Live dashboard & reporting
+var lwDashData = null, lwDashSrvNow = 0, lwDashBase = 0, lwRepData = null;
+
+function lwFmtDur(secs) {
+	secs = Math.max(0, Math.round(secs));
+	if (secs < 60) { return secs + 's'; }
+	var m = Math.floor(secs / 60), s = secs % 60;
+	if (m < 60) { return m + 'm' + (s ? ' ' + s + 's' : ''); }
+	var h = Math.floor(m / 60); m = m % 60;
+	return h + 'h' + (m ? ' ' + m + 'm' : '');
+}
+function lwEffNow() { return lwDashSrvNow + (Date.now() / 1000 - lwDashBase); }
+
+function lwDashRenderStatic(d) {
+	var t = LW.dash.i18n, k = d.kpi;
+	$('#lw-kpi-armed').text(k.armed);
+	$('#lw-kpi-alarming').text(k.alarming);
+	$('#lw-kpi-acked').text(k.acked);
+	$('#lw-kpi-arms-today').text(k.arms_today);
+	$('#lw-kpi-alarms-today').text(k.alarms_today);
+	$('#lw-kpi-avgack').text(k.avg_ack == null ? t.none : lwFmtDur(k.avg_ack));
+	// health bar
+	var h = d.health, html;
+	if (!h.ami) { html = '<span class="label label-danger"><i class="fa fa-times"></i> ' + t.amiDown + '</span>'; }
+	else { html = '<span class="label label-success"><i class="fa fa-check"></i> ' + t.amiUp + '</span>'; }
+	html += ' ';
+	if (h.fails > 0 || h.warns > 0) {
+		html += '<span class="label label-' + (h.fails ? 'danger' : 'warning') + '"><i class="fa fa-stethoscope"></i> '
+			+ t.issues.replace('%d', h.fails).replace('%d', h.warns) + '</span>';
+	} else {
+		html += '<span class="label label-success"><i class="fa fa-stethoscope"></i> ' + t.ready + '</span>';
+	}
+	$('#lw-health').html(html);
+	// queue
+	if (!d.queue || !d.queue.length) { $('#lw-live-queue').html('<span class="text-muted">' + t.queueEmpty + '</span>'); }
+	else {
+		var q = '<div style="font-size:12px;color:#888;margin-bottom:4px">' + t.nowPlaying + '</div>';
+		d.queue.forEach(function (it, i) {
+			var lbl = LW.dash.evLabels['PAGING'] || it.msg;
+			q += '<span class="label label-' + (it.msg === 'alarm' ? 'danger' : (i === 0 ? 'primary' : 'default')) + '" style="margin:2px;display:inline-block">'
+				+ (it.msg || '') + ' → ' + (it.ext || '') + '</span>';
+		});
+		$('#lw-live-queue').html(q);
+	}
+	// event feed
+	var f = '';
+	(d.events || []).forEach(function (e) {
+		var lbl = LW.dash.evLabels[e.event] || e.event;
+		var cls = (e.event === 'ALARM' || e.event === 'ERROR') ? 'text-danger'
+			: (e.event === 'ACK' || e.event === 'ALARM_REPEAT') ? 'text-warning'
+			: (e.event === 'ARM' || e.event === 'CHECKIN') ? 'text-success' : 'text-muted';
+		var when = new Date(e.ts * 1000).toLocaleTimeString();
+		f += '<div style="border-bottom:1px solid #f0f0f0;padding:3px 0;font-size:12px">'
+			+ '<span class="text-muted">' + when + '</span> '
+			+ '<strong class="' + cls + '">' + lbl + '</strong>'
+			+ (e.ext ? ' · ' + e.ext + (e.name ? ' (' + $('<i>').text(e.name).html() + ')' : '') : '') + '</div>';
+	});
+	$('#lw-live-feed').html(f || '<span class="text-muted">—</span>');
+}
+
+function lwDashTick() {
+	if (!lwDashData) { return; }
+	var t = LW.dash.i18n, now = lwEffNow(), rows = '';
+	var ss = lwDashData.sessions || [];
+	if (!ss.length) { $('#lw-live-sessions').html('<tr><td colspan="4" class="text-muted">' + t.noSessions + '</td></tr>'); }
+	else {
+		ss.forEach(function (s) {
+			var when;
+			if (s.state === 'ALARMING' || s.state === 'ACKED') {
+				when = '<span class="text-danger">' + t.ago.replace('%s', lwFmtDur(now - (s.alarm_started_ts || now))) + '</span>';
+			} else {
+				var left = (s.deadline_ts || now) - now;
+				when = (left <= 0) ? '<span class="text-danger">0s</span>'
+					: t.inMin.replace('%s', lwFmtDur(left));
+			}
+			rows += '<tr><td>' + s.ext + '</td><td>' + $('<i>').text(s.name || '').html() + '</td><td>'
+				+ lwStateFormatter(s.state) + '</td><td>' + when + '</td></tr>';
+		});
+		$('#lw-live-sessions').html(rows);
+	}
+	// "updated Xs ago" + live dot
+	var age = Math.max(0, Math.round(Date.now() / 1000 - lwDashBase));
+	$('#lw-dash-updated').html('<span style="color:#5cb85c">●</span> ' + LW.dash.i18n.live + ' · ' + LW.dash.i18n.updated + ' ' + age + 's');
+}
+
+function lwDashPoll() {
+	$.getJSON(LW.dash.ajax + '&command=dashboard', function (d) {
+		if (!d) { return; }
+		lwDashData = d; lwDashSrvNow = d.now; lwDashBase = Date.now() / 1000;
+		lwDashRenderStatic(d);
+		lwDashTick();
+	});
+}
+
+function lwRepRender(r) {
+	var t = LW.dash.i18n;
+	var tt = r.totals || {};
+	var cards = [['ARM', LW.dash.evLabels.ARM], ['CHECKIN', LW.dash.evLabels.CHECKIN],
+		['ALARM', LW.dash.evLabels.ALARM], ['ACK', LW.dash.evLabels.ACK], ['DISARM', LW.dash.evLabels.DISARM]];
+	var h = '';
+	cards.forEach(function (c) {
+		h += '<div class="col-sm-2 col-xs-4" style="padding:4px"><div class="well well-sm" style="text-align:center;margin:0">'
+			+ '<div style="font-size:22px;font-weight:bold">' + (tt[c[0]] || 0) + '</div><div style="font-size:11px">' + c[1] + '</div></div></div>';
+	});
+	h += '<div class="col-sm-2 col-xs-4" style="padding:4px"><div class="well well-sm" style="text-align:center;margin:0">'
+		+ '<div style="font-size:22px;font-weight:bold">' + (r.avg_ack == null ? t.none : lwFmtDur(r.avg_ack)) + '</div>'
+		+ '<div style="font-size:11px">' + t.avgAck + '</div></div></div>';
+	$('#lw-rep-totals').html(h);
+	// chart
+	var s = r.series || [], max = 1;
+	s.forEach(function (x) { max = Math.max(max, x.alarm, x.checkin); });
+	var c = '';
+	if (!s.length) { c = '<span class="text-muted" style="align-self:center">' + t.none + '</span>'; }
+	s.forEach(function (x) {
+		var ah = Math.round(x.alarm / max * 130), ch = Math.round(x.checkin / max * 130);
+		c += '<div style="display:flex;flex-direction:column;align-items:center;min-width:22px">'
+			+ '<div style="display:flex;align-items:flex-end;gap:2px;height:135px">'
+			+ '<div title="' + x.alarm + '" style="width:9px;background:#d9534f;height:' + ah + 'px"></div>'
+			+ '<div title="' + x.checkin + '" style="width:9px;background:#5bc0de;height:' + ch + 'px"></div>'
+			+ '</div><div style="font-size:10px;color:#888;white-space:nowrap;transform:rotate(0)">' + x.bucket + '</div></div>';
+	});
+	$('#lw-rep-chart').html(c);
+	// per-operator
+	var ops = r.operators || [], o = '';
+	if (!ops.length) { o = '<tr><td colspan="6" class="text-muted">' + t.none + '</td></tr>'; }
+	ops.forEach(function (op) {
+		o += '<tr><td>' + op.ext + '</td><td>' + $('<i>').text(op.name || '').html() + '</td><td>' + op.arms + '</td><td>'
+			+ op.alarms + '</td><td>' + op.acks + '</td><td>' + (op.avg_ack == null ? t.none : lwFmtDur(op.avg_ack)) + '</td></tr>';
+	});
+	$('#lw-rep-ops').html(o);
+}
+function lwRepLoad() {
+	var w = $('#lw-rep-window').val();
+	$.getJSON(LW.dash.ajax + '&command=report&window=' + encodeURIComponent(w), function (r) {
+		lwRepData = r; lwRepRender(r);
+	});
+}
+function lwRepCsv() {
+	if (!lwRepData) { return; }
+	var rows = [['extension', 'operator', 'armed', 'alarms', 'taken_charge', 'avg_take_charge_secs']];
+	(lwRepData.operators || []).forEach(function (op) {
+		rows.push([op.ext, op.name || '', op.arms, op.alarms, op.acks, op.avg_ack == null ? '' : op.avg_ack]);
+	});
+	rows.push([]);
+	var tt = lwRepData.totals || {};
+	Object.keys(tt).forEach(function (k) { rows.push(['total_' + k, tt[k]]); });
+	rows.push(['avg_take_charge_secs_overall', lwRepData.avg_ack == null ? '' : lwRepData.avg_ack]);
+	var csv = rows.map(function (r) {
+		return r.map(function (v) { v = ('' + v).replace(/"/g, '""'); return /[",\n]/.test(v) ? '"' + v + '"' : v; }).join(',');
+	}).join('\n');
+	var blob = new Blob([csv], { type: 'text/csv' });
+	var a = document.createElement('a');
+	a.href = URL.createObjectURL(blob);
+	a.download = LW.dash.i18n.csvName + '-' + (lwRepData.window || '') + '.csv';
+	document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
 $(function () {
+	// live dashboard
+	if (typeof LW !== 'undefined' && LW.dash && $('#lw-live-sessions').length) {
+		lwDashPoll();
+		setInterval(lwDashPoll, LW.dash.pollMs);
+		setInterval(lwDashTick, 1000);
+		lwRepLoad();
+		$('#lw-rep-window').on('change', lwRepLoad);
+		$('#lw-rep-csv').on('click', lwRepCsv);
+	}
 	// test buttons (live)
 	if ($('#lw-test-announce').length) {
 		$('#lw-test-announce').on('click', function () { lwTestStart('announce'); });

@@ -887,7 +887,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	}
 
 	public function ajaxRequest($req, $setting) {
-		return in_array($req, ['sessions', 'getJSON', 'teststart', 'teststatus', 'teststop', 'playmsg'], true);
+		return in_array($req, ['sessions', 'getJSON', 'teststart', 'teststatus', 'teststop', 'playmsg', 'dashboard', 'report'], true);
 	}
 
 	public function ajaxHandler() {
@@ -907,8 +907,109 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 				return $this->testStatus();
 			case 'teststop':
 				return $this->testStop();
+			case 'dashboard':
+				return $this->dashboardSnapshot();
+			case 'report':
+				return $this->reportStats($_REQUEST['window'] ?? '7d');
 		}
 		return false;
+	}
+
+	// ------------------------------------------------ Dashboard / reporting
+
+	private function countEventsSince($event, $since) {
+		$st = $this->db->prepare('SELECT COUNT(*) FROM loneworker_events WHERE event=? AND ts>=?');
+		$st->execute([$event, $since]);
+		return (int) $st->fetchColumn();
+	}
+
+	/** Average seconds between an alarm and its take-charge, over [$from,$to]; null if none. */
+	private function avgAckSecs($from, $to) {
+		$st = $this->db->prepare("SELECT ts,event,ext FROM loneworker_events WHERE event IN ('ALARM','ACK') AND ts>=? AND ts<=? ORDER BY id ASC");
+		$st->execute([$from, $to]);
+		$pending = []; $deltas = [];
+		foreach ($st->fetchAll(\PDO::FETCH_ASSOC) as $r) {
+			$e = (string) $r['ext'];
+			if ($r['event'] === 'ALARM') { if (!isset($pending[$e])) { $pending[$e] = (int) $r['ts']; } }
+			elseif (isset($pending[$e])) { $deltas[] = (int) $r['ts'] - $pending[$e]; unset($pending[$e]); }
+		}
+		return $deltas ? (int) round(array_sum($deltas) / count($deltas)) : null;
+	}
+
+	/** Live snapshot for the dashboard (polled by the GUI, no page refresh). */
+	public function dashboardSnapshot() {
+		$now = time();
+		$states = ['ARMED' => 0, 'ALARMING' => 0, 'ACKED' => 0];
+		foreach ($this->getSessions() as $s) { if (isset($states[$s['state']])) { $states[$s['state']]++; } }
+		$today = strtotime('today');
+		$queue = [];
+		try { $queue = $this->db->query('SELECT msg,ext FROM loneworker_announce_queue ORDER BY prio ASC, id ASC')->fetchAll(\PDO::FETCH_ASSOC); }
+		catch (\Throwable $e) {}
+		$checks = $this->checkReadiness();
+		$fails = 0; $warns = 0;
+		foreach ($checks as $c) { if ($c['level'] === 'fail') { $fails++; } elseif ($c['level'] === 'warn') { $warns++; } }
+		$ast = $this->freepbx->astman;
+		return [
+			'now'   => $now,
+			'kpi'   => [
+				'armed'        => $states['ARMED'],
+				'alarming'     => $states['ALARMING'],
+				'acked'        => $states['ACKED'],
+				'arms_today'   => $this->countEventsSince('ARM', $today),
+				'alarms_today' => $this->countEventsSince('ALARM', $today),
+				'avg_ack'      => $this->avgAckSecs($today, $now),
+			],
+			'sessions' => $this->getSessionsForGrid(),
+			'queue'    => $queue,
+			'health'   => ['ami' => ($ast && $ast->connected()), 'fails' => $fails, 'warns' => $warns],
+			'events'   => $this->getEventsForView(25),
+		];
+	}
+
+	private function windowStart($w, $now) {
+		if ($w === 'today') { return strtotime('today'); }
+		if ($w === '30d')   { return $now - 30 * 86400; }
+		return $now - 7 * 86400;
+	}
+
+	/** Historical statistics for the report period (today | 7d | 30d). */
+	public function reportStats($window) {
+		$window = in_array($window, ['today', '7d', '30d'], true) ? $window : '7d';
+		$now = time();
+		$from = $this->windowStart($window, $now);
+		$types = ['ARM', 'CHECKIN', 'REMINDER', 'ALARM', 'ALARM_REPEAT', 'ACK', 'DISARM'];
+		$totals = array_fill_keys($types, 0);
+		$st = $this->db->prepare('SELECT ts,event,ext FROM loneworker_events WHERE ts>=? ORDER BY id ASC');
+		$st->execute([$from]);
+		$rows = $st->fetchAll(\PDO::FETCH_ASSOC);
+		$perOp = []; $pending = []; $series = [];
+		$bucketFmt = ($window === 'today') ? 'H:00' : 'm-d';
+		foreach ($rows as $r) {
+			$ev = $r['event']; $e = (string) ($r['ext'] !== null && $r['ext'] !== '' ? $r['ext'] : '?');
+			if (isset($totals[$ev])) { $totals[$ev]++; }
+			if (!isset($perOp[$e])) { $perOp[$e] = ['arms' => 0, 'alarms' => 0, 'acks' => 0, 'd' => []]; }
+			if ($ev === 'ARM')   { $perOp[$e]['arms']++; }
+			if ($ev === 'ALARM') { $perOp[$e]['alarms']++; if (!isset($pending[$e])) { $pending[$e] = (int) $r['ts']; } }
+			if ($ev === 'ACK')   { $perOp[$e]['acks']++; if (isset($pending[$e])) { $perOp[$e]['d'][] = (int) $r['ts'] - $pending[$e]; unset($pending[$e]); } }
+			if ($ev === 'ALARM' || $ev === 'CHECKIN') {
+				$b = date($bucketFmt, (int) $r['ts']);
+				if (!isset($series[$b])) { $series[$b] = ['alarm' => 0, 'checkin' => 0]; }
+				$series[$b][$ev === 'ALARM' ? 'alarm' : 'checkin']++;
+			}
+		}
+		$names = [];
+		try { foreach (\FreePBX::Core()->getAllUsers() as $u) { $names[$u['extension']] = $u['name']; } } catch (\Throwable $e) {}
+		$operators = [];
+		foreach ($perOp as $e => $d) {
+			$operators[] = ['ext' => $e, 'name' => $names[$e] ?? '', 'arms' => $d['arms'], 'alarms' => $d['alarms'],
+				'acks' => $d['acks'], 'avg_ack' => $d['d'] ? (int) round(array_sum($d['d']) / count($d['d'])) : null];
+		}
+		usort($operators, fn($a, $b) => ($b['alarms'] <=> $a['alarms']) ?: ($b['arms'] <=> $a['arms']));
+		ksort($series);
+		$seriesArr = [];
+		foreach ($series as $b => $v) { $seriesArr[] = ['bucket' => $b, 'alarm' => $v['alarm'], 'checkin' => $v['checkin']]; }
+		return ['window' => $window, 'from' => $from, 'now' => $now, 'totals' => $totals,
+			'avg_ack' => $this->avgAckSecs($from, $now), 'operators' => $operators, 'series' => $seriesArr];
 	}
 
 	/** Sessions enriched with operator name + time labels for the grid. */
