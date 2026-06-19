@@ -887,7 +887,70 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	}
 
 	public function ajaxRequest($req, $setting) {
-		return in_array($req, ['sessions', 'getJSON', 'teststart', 'teststatus', 'teststop', 'playmsg', 'dashboard', 'report'], true);
+		return in_array($req, ['sessions', 'getJSON', 'teststart', 'teststatus', 'teststop', 'playmsg', 'dashboard', 'report', 'history'], true);
+	}
+
+	/** Per-session history (active + past), reconstructed from the event log.
+	 *  Each operator can have only one open session at a time, so the per-ext event
+	 *  timeline splits cleanly into ARM…DISARM runs; the still-open run is the active one. */
+	public function getSessionHistory($window = '7d', $limit = 200) {
+		$window = in_array($window, ['today', '7d', '30d', 'all'], true) ? $window : '7d';
+		$now = time();
+		$from = ($window === 'all') ? 0 : $this->windowStart($window, $now);
+		// current active sessions (state + precise start) so we never miss/over-trim an open one
+		$active = [];
+		foreach ($this->getSessions() as $s) { $active[(string) $s['ext']] = $s; }
+		$earliest = $from;
+		foreach ($active as $s) { $earliest = min($earliest, (int) $s['start_ts']); }
+		$relevant = ['ARM', 'CHECKIN', 'REMINDER', 'ALARM', 'ALARM_REPEAT', 'ACK', 'ACK_HOLD', 'CASCADE', 'DISARM'];
+		$ph = implode(',', array_fill(0, count($relevant), '?'));
+		$st = $this->db->prepare("SELECT ts,event,ext,payload FROM loneworker_events WHERE ts>=? AND event IN ($ph) AND ext IS NOT NULL AND ext<>'' ORDER BY id ASC");
+		$st->execute(array_merge([$earliest], $relevant));
+		$rows = $st->fetchAll(\PDO::FETCH_ASSOC);
+		$names = [];
+		try { foreach (\FreePBX::Core()->getAllUsers() as $u) { $names[$u['extension']] = $u['name']; } } catch (\Throwable $e) {}
+		$mk = function ($e, $ts) use ($names) {
+			return ['ext' => $e, 'name' => $names[$e] ?? '', 'start_ts' => $ts, 'end_ts' => null, 'end_reason' => '',
+				'checkins' => 0, 'reminders' => 0, 'alarms' => 0, 'recalls' => 0, 'acked' => false, 'events' => []];
+		};
+		$open = []; $sessions = [];
+		foreach ($rows as $r) {
+			$e = (string) $r['ext']; $ev = $r['event']; $ts = (int) $r['ts'];
+			if ($ev === 'ARM') {
+				if (isset($open[$e])) { $open[$e]['end_ts'] = $ts; $open[$e]['end_reason'] = 'superseded'; $sessions[] = $open[$e]; }
+				$open[$e] = $mk($e, $ts);
+			}
+			if (!isset($open[$e])) { $open[$e] = $mk($e, $ts); $open[$e]['partial'] = true; }
+			$open[$e]['events'][] = ['ts' => $ts, 'event' => $ev, 'payload' => $r['payload']];
+			if ($ev === 'CHECKIN') { $open[$e]['checkins']++; }
+			if ($ev === 'REMINDER') { $open[$e]['reminders']++; }
+			if ($ev === 'ALARM') { $open[$e]['alarms']++; }
+			if ($ev === 'ALARM_REPEAT') { $open[$e]['recalls']++; }
+			if ($ev === 'ACK' || $ev === 'ACK_HOLD') { $open[$e]['acked'] = true; }
+			if ($ev === 'DISARM') {
+				$open[$e]['end_ts'] = $ts;
+				$pl = json_decode((string) $r['payload'], true);
+				$open[$e]['end_reason'] = is_array($pl) ? ($pl['reason'] ?? 'manual') : 'manual';
+				$sessions[] = $open[$e]; unset($open[$e]);
+			}
+		}
+		foreach ($open as $e => $s) { $sessions[] = $s; } // still-open runs
+		$out = [];
+		foreach ($sessions as $s) {
+			$isActive = ($s['end_ts'] === null) && isset($active[$s['ext']]);
+			if (!$isActive && $s['end_ts'] !== null && $s['end_ts'] < $from) { continue; } // closed before the window
+			if (!$isActive && $s['end_ts'] === null) { continue; } // open run with no live session (stale)
+			$s['active'] = $isActive;
+			$s['state'] = $isActive ? ($active[$s['ext']]['state'] ?? 'ARMED') : 'ENDED';
+			$s['duration'] = (($s['end_ts'] !== null ? $s['end_ts'] : $now) - $s['start_ts']);
+			$s['id'] = $s['ext'] . '@' . $s['start_ts'];
+			$out[] = $s;
+		}
+		usort($out, function ($a, $b) {
+			if ($a['active'] !== $b['active']) { return $a['active'] ? -1 : 1; } // active first
+			return $b['start_ts'] <=> $a['start_ts'];
+		});
+		return ['window' => $window, 'now' => $now, 'sessions' => array_slice($out, 0, (int) $limit)];
 	}
 
 	public function ajaxHandler() {
@@ -911,6 +974,8 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 				return $this->dashboardSnapshot();
 			case 'report':
 				return $this->reportStats($_REQUEST['window'] ?? '7d');
+			case 'history':
+				return $this->getSessionHistory($_REQUEST['window'] ?? '7d');
 		}
 		return false;
 	}
