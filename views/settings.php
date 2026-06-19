@@ -367,6 +367,7 @@ lw_num(_('Confirmation timeout (seconds)'), 'confirm_timeout', $s['confirm_timeo
 	starting: <?php echo json_encode(_('Starting…')); ?>,
 	running: <?php echo json_encode(_('Test running — %d active call(s).')); ?>,
 	announcing: <?php echo json_encode(_('Announcement playing on the speakers…')); ?>,
+	playing: <?php echo json_encode(_('Playing on the speakers…')); ?>,
 	ended: <?php echo json_encode(_('Test ended.')); ?>,
 	stoppedMsg: <?php echo json_encode(_('Test stopped (%d call(s) hung up).')); ?>,
 	failed: <?php echo json_encode(_('Could not start the test — check the Readiness panel above (paging group / responders / AMI).')); ?>,
@@ -394,29 +395,34 @@ lw_num(_('Event retention (days)'), 'retention_days', $s['retention_days'], _('A
 <div role="tabpanel" class="tab-pane" id="lw-tab-ann">
 <h3><?php echo _('Announcements (built-in)') ?></h3>
 <div class="alert alert-info"><i class="fa fa-lock"></i> <?php echo _('The announcement audio is built into the module (Italian) and is not editable: the clips ship pre-installed and are played automatically. Between the two parts of each message the system speaks the extension number digit by digit, e.g. "...extension 3-0-1...".') ?></div>
+<p class="help-block"><i class="fa fa-volume-up"></i> <?php echo _('Use the "Play on speakers" buttons below to preview each message live on the paging group (a sample extension number is spoken). You can stop playback at any time.') ?></p>
+<div style="margin-bottom:12px">
+	<button type="button" class="btn btn-danger" id="lw-play-stop" style="display:none"><i class="fa fa-stop"></i> <?php echo _('Stop playback') ?></button>
+	<div id="lw-play-status" class="alert alert-info" style="display:none;margin-top:10px"></div>
+</div>
 
 <?php
 // Read-only reference of the fixed built-in messages and who hears each one.
 $groups = [
-	['title' => _('Armed — played when an operator dials 701'),                 'aud' => 'speakers', 'callnum' => true,
+	['title' => _('Armed — played when an operator dials 701'),                 'aud' => 'speakers', 'callnum' => true, 'msg' => 'arm',
 		'pre' => _('Attention. Lone worker system armed for extension'),
 		'post' => _('must confirm their presence by calling number')],
-	['title' => _('Confirmed — played when an operator dials 702'),              'aud' => 'speakers',
+	['title' => _('Confirmed — played when an operator dials 702'),              'aud' => 'speakers', 'msg' => 'confirm',
 		'pre' => _('Lone worker: extension'),
 		'post' => _('has confirmed their presence. The system stays active.')],
-	['title' => _('Reminder — played before the deadline'),                     'aud' => 'speakers', 'callnum' => true,
+	['title' => _('Reminder — played before the deadline'),                     'aud' => 'speakers', 'callnum' => true, 'msg' => 'reminder',
 		'pre' => _('Lone worker reminder. Extension'),
 		'post' => _('must confirm presence. Only a few minutes remain before the alarm. Call number')],
-	['title' => _('Alarm — played when the timeout expires'),                    'aud' => 'speakers',
+	['title' => _('Alarm — played when the timeout expires'),                    'aud' => 'speakers', 'msg' => 'alarm',
 		'pre' => _('Lone worker alarm. Extension'),
 		'post' => _('did not confirm. Check the operator immediately. Emergency calls have been started.')],
-	['title' => _('Acknowledged — played when a responder takes charge'),        'aud' => 'speakers',
+	['title' => _('Acknowledged — played when a responder takes charge'),        'aud' => 'speakers', 'msg' => 'ack',
 		'pre' => _('Lone worker alarm taken charge of for extension'),
 		'post' => _('A responder is checking the situation on site.')],
-	['title' => _('Disarmed — played when an operator dials 703'),               'aud' => 'speakers',
+	['title' => _('Disarmed — played when an operator dials 703'),               'aud' => 'speakers', 'msg' => 'disarm',
 		'pre' => _('Lone worker system disarmed for extension'),
 		'post' => null],
-	['title' => _('Emergency call — played to the responders during the alarm'), 'aud' => 'phone',
+	['title' => _('Emergency call — played to the responders during the alarm'), 'aud' => 'phone', 'msg' => 'call',
 		'pre' => _('Lone worker alarm. The operator of extension'),
 		'post' => _('did not confirm. Press one to take charge of the alarm.')],
 ];
@@ -444,6 +450,7 @@ $audienceHtml = function ($aud) {
 		<?php if (!empty($g['callnum'])): ?>
 		<p class="help-block" style="margin-top:6px"><i class="fa fa-info-circle"></i> <?php echo _('The check-in number is spoken automatically here (SayDigits), taken from the Check-in feature code above.') ?></p>
 		<?php endif; ?>
+		<button type="button" class="btn btn-sm btn-primary lw-play" data-msg="<?php echo htmlspecialchars($g['msg']) ?>"><i class="fa fa-play"></i> <?php echo _('Play on speakers') ?></button>
 	</div>
 </div>
 <?php endforeach; ?>

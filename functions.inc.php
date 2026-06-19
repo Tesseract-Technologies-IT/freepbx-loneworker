@@ -80,6 +80,8 @@ function loneworker_get_config($engine) {
 	loneworker_add_ann($ext, $ac, 'alarm',    loneworker_default('alarm-pre'),     loneworker_default('alarm-post'),     '',       $lang, $agi);
 	loneworker_add_ann($ext, $ac, 'ack',      loneworker_default('ack-pre'),       loneworker_default('ack-post'),       '',       $lang, $agi);
 	loneworker_add_ann($ext, $ac, 'disarm',   loneworker_default('disarmed-pre'),  '',                                   '',       $lang, $agi);
+	// 'call' is the responder prompt; also exposed here so it can be previewed on the speakers from the GUI.
+	loneworker_add_ann($ext, $ac, 'call',     loneworker_default('call-pre'),      loneworker_default('call-post'),      '',       $lang, $agi);
 
 	// --- Emergency cascade: ring ALL responders simultaneously --------------
 	// One channel Dials every responder at once. The first one to press 1 in the

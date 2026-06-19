@@ -7,7 +7,7 @@
 	<license>GPLv3+</license>
 	<licenselink>http://www.gnu.org/licenses/gpl-3.0.txt</licenselink>
 	<changelog>
-		*1.0.1* Ship the Italian announcement audio built into the module (fixed set, not editable via System Recordings).
+		*1.0.1* Ship the Italian announcement audio built into the module (fixed set, not editable); add per-message "Play on speakers" preview buttons.
 		*1.0.0* First release: native multi-operator lone worker monitoring.
 	</changelog>
 	<category>Applications</category>

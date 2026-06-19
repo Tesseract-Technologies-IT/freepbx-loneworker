@@ -164,12 +164,60 @@ function lwTestStop() {
 	});
 }
 
+// --- per-message "Play on speakers" preview (Announcements tab) ---
+var lwPlayPoll = null;
+function lwPlaySet(cls, icon, html) {
+	$('#lw-play-status').removeClass('alert-info alert-success alert-warning alert-danger').addClass(cls)
+		.html('<i class="fa ' + icon + '"></i> ' + html).show();
+}
+function lwPlayPollStart() {
+	if (lwPlayPoll) { clearInterval(lwPlayPoll); }
+	lwPlayPoll = setInterval(function () {
+		$.getJSON(LW.test.ajax + '&command=teststatus', function (d) {
+			if (!d || !d.active) {
+				clearInterval(lwPlayPoll); lwPlayPoll = null;
+				lwPlaySet('alert-success', 'fa-check', LW.test.ended);
+				$('#lw-play-stop').hide();
+			}
+		});
+	}, 2000);
+}
+function lwPlayMsg(msg) {
+	if (typeof LW === 'undefined' || !LW.test) { return; }
+	lwPlaySet('alert-info', 'fa-spinner fa-spin', LW.test.playing);
+	$('#lw-play-stop').show();
+	$.getJSON(LW.test.ajax + '&command=playmsg&msg=' + encodeURIComponent(msg), function (r) {
+		if (!r || !r.ok) {
+			lwPlaySet('alert-danger', 'fa-exclamation-triangle', LW.test.failed);
+			$('#lw-play-stop').hide();
+			return;
+		}
+		lwPlayPollStart();
+	}).fail(function () {
+		lwPlaySet('alert-danger', 'fa-exclamation-triangle', LW.test.failed);
+		$('#lw-play-stop').hide();
+	});
+}
+function lwPlayStop() {
+	if (typeof LW === 'undefined' || !LW.test) { return; }
+	$.getJSON(LW.test.ajax + '&command=teststop', function (r) {
+		if (lwPlayPoll) { clearInterval(lwPlayPoll); lwPlayPoll = null; }
+		lwPlaySet('alert-warning', 'fa-stop', LW.test.stoppedMsg.replace('%d', (r && r.stopped) || 0));
+		$('#lw-play-stop').hide();
+	});
+}
+
 $(function () {
 	// test buttons (live)
 	if ($('#lw-test-announce').length) {
 		$('#lw-test-announce').on('click', function () { lwTestStart('announce'); });
 		$('#lw-test-alarm').on('click', function () { lwTestStart('alarm'); });
 		$('#lw-test-stop').on('click', lwTestStop);
+	}
+	// per-message "Play on speakers" buttons (Announcements tab)
+	if ($('.lw-play').length) {
+		$('.lw-play').on('click', function () { lwPlayMsg($(this).data('msg')); });
+		$('#lw-play-stop').on('click', lwPlayStop);
 	}
 	// feature-code conflict check
 	if (typeof LW !== 'undefined' && LW.used) {

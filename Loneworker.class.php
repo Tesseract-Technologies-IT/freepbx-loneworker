@@ -771,13 +771,22 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	/** accountcode used to tag test calls so they can be tracked and stopped. */
 	const TEST_ACCOUNT = 'lwtest';
 
-	/** Test: play an announcement on the speakers (fake extension), without arming anything. */
-	public function testAnnounce() {
+	/** Announcement message types that can be previewed on the speakers. */
+	const PREVIEW_MSGS = ['arm', 'confirm', 'reminder', 'alarm', 'ack', 'disarm', 'call'];
+
+	/** Test: play a specific announcement on the speakers (fake extension), without arming. */
+	public function testAnnounceMsg($msg) {
+		if (!in_array($msg, self::PREVIEW_MSGS, true)) { return false; }
 		$s = $this->getSettings();
-		$this->setConfig('speaker_until', '0');
-		$ok = $this->announceNow('reminder', '000', $s, self::TEST_ACCOUNT);
-		$this->logEvent('TEST', '000', ['what' => 'announce', 'ok' => $ok]);
+		$this->setConfig('speaker_until', '0'); // play now even if the gate is busy
+		$ok = $this->announceNow($msg, '301', $s, self::TEST_ACCOUNT);
+		$this->logEvent('TEST', '301', ['what' => 'announce', 'msg' => $msg, 'ok' => $ok]);
 		return $ok;
+	}
+
+	/** Test: play the reminder announcement on the speakers (used by the global Test button). */
+	public function testAnnounce() {
+		return $this->testAnnounceMsg('reminder');
 	}
 
 	/** Test: launch the alarm cascade to the responders (fake extension), without a session. */
@@ -835,7 +844,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	}
 
 	public function ajaxRequest($req, $setting) {
-		return in_array($req, ['sessions', 'getJSON', 'teststart', 'teststatus', 'teststop'], true);
+		return in_array($req, ['sessions', 'getJSON', 'teststart', 'teststatus', 'teststop', 'playmsg'], true);
 	}
 
 	public function ajaxHandler() {
@@ -848,6 +857,9 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 				$type = $_REQUEST['type'] ?? '';
 				$ok = ($type === 'alarm') ? $this->testAlarm() : $this->testAnnounce();
 				return ['ok' => (bool) $ok, 'type' => $type];
+			case 'playmsg':
+				$msg = $_REQUEST['msg'] ?? '';
+				return ['ok' => (bool) $this->testAnnounceMsg($msg), 'msg' => $msg];
 			case 'teststatus':
 				return $this->testStatus();
 			case 'teststop':
