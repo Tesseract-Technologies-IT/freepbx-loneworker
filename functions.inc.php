@@ -31,8 +31,6 @@ function loneworker_add_ann(&$ext, $ctx, $exten, $pre, $post, $sayNum = '', $lan
 	$ext->add($ctx, $exten, '', new ext_saydigits('${CALLERID(num)}'));
 	if ($post !== '') { $ext->add($ctx, $exten, '', new ext_playback($post)); }
 	if ($sayNum !== '') { $ext->add($ctx, $exten, '', new ext_saydigits($sayNum)); }
-	// When this announcement finishes, free the speakers and play the next queued one (back-to-back).
-	if ($agi !== '') { $ext->add($ctx, $exten, '', new ext_agi($agi . ',drain')); }
 	$ext->add($ctx, $exten, '', new ext_hangup(''));
 }
 
@@ -82,6 +80,22 @@ function loneworker_get_config($engine) {
 	loneworker_add_ann($ext, $ac, 'disarm',   loneworker_default('disarmed-pre'),  '',                                   '',       $lang, $agi);
 	// 'call' is the responder prompt; also exposed here so it can be previewed on the speakers from the GUI.
 	loneworker_add_ann($ext, $ac, 'call',     loneworker_default('call-pre'),      loneworker_default('call-post'),      '',       $lang, $agi);
+
+	// 'drain' = one paging channel that plays the WHOLE queue in sequence (keeps the page up
+	// between messages so back-to-back announcements don't collide). Each loop the AGI 'nextann'
+	// pops the next item and exposes it as LW_* channel vars; LW_MSG empty => queue drained.
+	$dr = 'drain';
+	$ext->add($ac, $dr, '1', new ext_answer(''));
+	$ext->add($ac, $dr, '', new ext_wait('1'));
+	$ext->add($ac, $dr, 'loop', new ext_agi($agi . ',nextann'));
+	$ext->add($ac, $dr, '', new ext_gotoif('$["${LW_MSG}" = ""]', 'done'));
+	$ext->add($ac, $dr, '', new ext_setvar('CHANNEL(language)', '${LW_LANG}'));
+	$ext->add($ac, $dr, '', new ext_execif('$["${LW_PRE}" != ""]', 'Playback', '${LW_PRE}'));
+	$ext->add($ac, $dr, '', new ext_saydigits('${LW_EXT}'));
+	$ext->add($ac, $dr, '', new ext_execif('$["${LW_POST}" != ""]', 'Playback', '${LW_POST}'));
+	$ext->add($ac, $dr, '', new ext_execif('$["${LW_SAY}" != ""]', 'SayDigits', '${LW_SAY}'));
+	$ext->add($ac, $dr, '', new ext_goto('loop'));
+	$ext->add($ac, $dr, 'done', new ext_hangup(''));
 
 	// --- Emergency cascade: ring ALL responders simultaneously --------------
 	// One channel Dials every responder at once. The first one to press 1 in the

@@ -394,8 +394,8 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 			if ($output) { $output->writeln('REMINDER ' . $r['ext']); }
 		}
 
-		// Safety net: if the AGI 'drain' hook ever failed to chain, keep the queue moving.
-		$this->drainAnnounce();
+		// Safety net: make sure a drain channel is running if anything is queued.
+		$this->ensureDrainChannel();
 
 		// 4) event retention (roughly once an hour)
 		if ((int) $s['retention_days'] > 0 && ($now % 3600) < 60) {
@@ -409,14 +409,16 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	// ----------------------------------------------------- Originate / AMI
 
 	// ------------------------------------- Announcement queue (speakers)
-	// The physical speakers can only play one announcement at a time. Announcements
-	// are queued and played back-to-back: each one, when it finishes, triggers the
-	// next via the AGI 'drain' hook appended to app-loneworker-announce. So when two
-	// operators alarm at once, both responder cascades start immediately (in parallel)
-	// and their spoken announcements are played one after another, as soon as the
-	// speakers free up — alarms first, oldest first — instead of being dropped.
-	// The speaker gate marks "an announcement is in flight"; it is released by
-	// onAnnounceFinished() at the real end of each announcement.
+	// The physical speakers can only play one announcement at a time. Announcements are
+	// queued, and ONE paging channel (the 'drain' extension of app-loneworker-announce)
+	// stays up and plays every queued clip in sequence, pulling the next item via the AGI
+	// 'nextann' verb. Keeping the page alive between messages is what makes back-to-back
+	// announcements work: re-paging the group for each message collides with the still-
+	// active previous page ("everyone is busy/congested") and only the first clip is heard.
+	// So when two operators alarm at once, both responder cascades start immediately (in
+	// parallel) and their announcements play one after another — alarms first, oldest first.
+	// The speaker gate marks "a drain channel is active"; nextAnnouncement() releases it
+	// when the queue is empty.
 
 	/** Queue priority for a message type: lower number = played sooner. */
 	private function announcePriority($msg) {
@@ -435,28 +437,59 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	}
 	private function saveAnnounceQueue($q) { $this->setConfig('announce_queue', json_encode(array_values($q))); }
 
-	/** Enqueue an announcement (dedup identical pending msg+ext) and try to play it now. */
+	/** Enqueue an announcement (dedup identical pending msg+ext) and make sure a drain channel plays it. */
 	public function enqueueAnnounce($msg, $ext) {
 		$ext = (string) $ext;
 		$q = $this->getAnnounceQueue();
 		foreach ($q as $it) {
 			if (($it['msg'] ?? '') === $msg && (string) ($it['ext'] ?? '') === $ext) {
-				$this->drainAnnounce(); // already pending: just make sure the queue is moving
+				$this->ensureDrainChannel(); // already pending: just make sure the queue is draining
 				return true;
 			}
 		}
 		$q[] = ['msg' => $msg, 'ext' => $ext, 'ts' => time()];
 		$this->saveAnnounceQueue($q);
 		$this->logEvent('PAGING_QUEUED', $ext, ['msg' => $msg, 'depth' => count($q)]);
-		$this->drainAnnounce();
+		$this->ensureDrainChannel();
 		return true;
 	}
 
-	/** If the speakers are free, pop the highest-priority (then oldest) announcement and play it. */
-	public function drainAnnounce() {
-		if ($this->speakerBusy()) { return false; }   // one is playing; the AGI hook will chain the next
+	/** Start ONE paging channel that drains the whole announcement queue, if none is active. */
+	public function ensureDrainChannel() {
+		if ($this->speakerBusy()) { return false; }       // a drain channel is already running
+		if (empty($this->getAnnounceQueue())) { return false; }
+		$s = $this->getSettings();
+		$pg = trim((string) $s['paging_group']);
+		if ($pg === '') { $this->logEvent('ERROR', null, ['detail' => 'no-paging-group']); return false; }
+		$ast = $this->freepbx->astman;
+		if (!$ast || !$ast->connected()) { $this->logEvent('ERROR', null, ['detail' => 'ami-down']); return false; }
+		$this->setSpeakerGate(120);  // held (and refreshed by nextAnnouncement) while draining
+		$ast->Originate([
+			'Channel'  => 'Local/' . $pg . '@from-internal',
+			'Context'  => 'app-loneworker-announce',
+			'Exten'    => 'drain',
+			'Priority' => 1,
+			'Async'    => 'true',
+		]);
+		$this->logEvent('PAGING', null, ['drain' => true, 'pg' => $pg]);
+		return true;
+	}
+
+	/** Playback path of a built-in clip (e.g. 'armed-pre'), or '' if not installed. */
+	private function clipPath($base) {
+		$dir = $this->soundsDir() . '/loneworker';
+		foreach (['wav', 'ulaw', 'sln', 'gsm'] as $e) {
+			if (is_file($dir . '/lw-' . $base . '.' . $e)) { return 'loneworker/lw-' . $base; }
+		}
+		return '';
+	}
+
+	/** Pop the next announcement (highest priority, then oldest) and return what the drain
+	 *  dialplan needs to render it; null when the queue is empty (also releases the gate).
+	 *  Called by the AGI 'nextann' verb on each loop iteration of the drain channel. */
+	public function nextAnnouncement() {
 		$q = $this->getAnnounceQueue();
-		if (empty($q)) { return false; }
+		if (empty($q)) { $this->setConfig('speaker_until', '0'); return null; }
 		$best = 0;
 		foreach ($q as $i => $it) {
 			$ip = $this->announcePriority($it['msg'] ?? '');         $its = (int) ($it['ts'] ?? 0);
@@ -466,28 +499,27 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		$item = $q[$best];
 		unset($q[$best]);
 		$this->saveAnnounceQueue($q);
-		return $this->announceNow($item['msg'], $item['ext'], $this->getSettings());
+		$this->setSpeakerGate(120); // keep the gate held while we are still draining
+		$s = $this->getSettings();
+		$map = ['arm' => 'armed', 'confirm' => 'confirmed', 'reminder' => 'reminder', 'alarm' => 'alarm', 'ack' => 'ack', 'disarm' => 'disarmed', 'call' => 'call'];
+		$base = $map[$item['msg']] ?? $item['msg'];
+		$say = '';
+		if (in_array($item['msg'], ['arm', 'reminder'], true)) {
+			$say = (new \featurecode('loneworker', 'checkin'))->getCodeActive() ?: '';
+		}
+		$lang = trim((string) ($s['digit_language'] ?? 'it')) ?: 'it';
+		$this->logEvent('PAGING', $item['ext'], ['msg' => $item['msg']]);
+		return ['msg' => $item['msg'], 'ext' => (string) $item['ext'], 'pre' => $this->clipPath($base . '-pre'),
+			'post' => $this->clipPath($base . '-post'), 'say' => $say, 'lang' => $lang];
 	}
 
-	/** Called by the AGI 'drain' hook at the end of an announcement: release the
-	 *  speakers and immediately start the next queued announcement (back-to-back). */
-	public function onAnnounceFinished() {
-		$this->setConfig('speaker_until', '0'); // release the gate at the real end of the audio
-		return $this->drainAnnounce();
-	}
-
-	/** Low-level: play ONE announcement on the speakers now (does not touch the queue).
-	 *  Dynamic announcement via the paging group (bridge trick). $account, if set, tags the
-	 *  channel (accountcode) so a test can be tracked/stopped. */
+	/** Low-level: play ONE announcement on the speakers now, used by the GUI preview
+	 *  (one-shot, paced by the user). $account tags the channel so it can be tracked/stopped. */
 	private function announceNow($msg, $ext, $s, $account = '') {
 		$pg = trim((string) $s['paging_group']);
 		if ($pg === '') { $this->logEvent('ERROR', $ext, ['detail' => 'no-paging-group']); return false; }
 		$ast = $this->freepbx->astman;
 		if (!$ast || !$ast->connected()) { $this->logEvent('ERROR', $ext, ['detail' => 'ami-down']); return false; }
-		// Generous fallback ceiling so the once-a-minute tick can't barge in mid-announcement;
-		// the real release happens in onAnnounceFinished() via the AGI 'drain' hook.
-		$this->setSpeakerGate(60);
-		// Exten = message type; CallerID(num) = extension (read by the dialplan via ${CALLERID(num)})
 		$params = [
 			'Channel'  => 'Local/' . $pg . '@from-internal',
 			'Context'  => 'app-loneworker-announce',
@@ -498,7 +530,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		];
 		if ($account !== '') { $params['Account'] = $account; }
 		$ast->Originate($params);
-		$this->logEvent('PAGING', $ext, ['msg' => $msg, 'pg' => $pg]);
+		$this->logEvent('PAGING', $ext, ['msg' => $msg, 'pg' => $pg, 'preview' => true]);
 		return true;
 	}
 

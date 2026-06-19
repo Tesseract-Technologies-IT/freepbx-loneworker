@@ -31,7 +31,20 @@ try {
 		case 'disarm':  $res = $lw->disarm($ext);  break;
 		case 'ack':     $res = ($ext !== '') ? $lw->ackByExt($ext) : $lw->ackOldest(); break;
 		case 'isactive': $agi->set_variable('LW_ACTIVE', $lw->isAlarming($ext) ? '1' : '0'); $res = ['result' => 'ok', 'ext' => $ext]; break;
-		case 'drain':   $lw->onAnnounceFinished(); $res = ['result' => 'ok', 'ext' => $ext]; break; // end of announcement: play next queued
+		case 'nextann': // drain loop: fetch the next queued announcement and expose it as channel vars
+			$a = $lw->nextAnnouncement();
+			if (!$a) {
+				$agi->set_variable('LW_MSG', '');
+			} else {
+				$agi->set_variable('LW_MSG', $a['msg']);
+				$agi->set_variable('LW_EXT', $a['ext']);
+				$agi->set_variable('LW_PRE', $a['pre']);
+				$agi->set_variable('LW_POST', $a['post']);
+				$agi->set_variable('LW_SAY', $a['say']);
+				$agi->set_variable('LW_LANG', $a['lang']);
+			}
+			$res = ['result' => 'ok', 'ext' => $ext];
+			break;
 		default:        $res = ['result' => 'err', 'ext' => $ext];
 	}
 } catch (\Throwable $e) {
