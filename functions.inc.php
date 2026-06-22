@@ -190,5 +190,8 @@ function loneworker_get_config($engine) {
 	$ext->add($cf, 's', '', new ext_saydigits('${LWEXT}'));                    // ... N ...
 	if ($rcpost !== '') { $ext->add($cf, 's', '', new ext_playback($rcpost)); } // "... good response/intervention."
 	$ext->add($cf, 's', '', new ext_wait('1'));
-	$ext->add($cf, 's', '', new ext_return(''));
+	// Hang up after the confirmation instead of Return(): a Return would bridge the responder back
+	// to the orchestration channel (which is parked in Wait), leaving the call up until they hang up
+	// manually. The alarm is already acknowledged, so end the call cleanly.
+	$ext->add($cf, 's', '', new ext_hangup(''));
 }
