@@ -2,11 +2,12 @@
 	<rawname>loneworker</rawname>
 	<repo>local</repo>
 	<name>Lone Worker</name>
-	<version>1.0.19</version>
+	<version>1.0.20</version>
 	<publisher>Tesseract Technologies</publisher>
 	<license>GPLv3+</license>
 	<licenselink>http://www.gnu.org/licenses/gpl-3.0.txt</licenselink>
 	<changelog>
+		*1.0.20* Every spoken message now explains exactly what happens next, reading the REAL configured values aloud (minutes, codes) and updating automatically when the timers change. Arming says when the first reminder comes and after how many minutes the alarm fires (and that you must NOT confirm right away); each reminder says how many minutes are left before the alarm and that it repeats every N minutes; the confirmation says when the next reminder is due; alarm/take-charge messages say what to do. Messages are now assembled from audio fragments with the numbers spoken between them (extension and minutes-left at call time via SayDigits/SayNumber, configured values baked at reload). New built-in clip set (lw-arm-1..5, lw-rem-1..5, lw-alarm-1/2, lw-call-1/2, lw-taken-1/2, lw-ack-1/2, lw-conf-1..4, lw-dis-1/2); the announce queue carries a per-message number.
 		*1.0.19* Fix: the responder's call now hangs up automatically after the take-charge confirmation. It used to Return() from the confirm subroutine, which bridged the responder back to the orchestration channel (parked in Wait), leaving the call connected until the responder hung up by hand. The alarm is already acknowledged at that point, so the call is ended cleanly.
 		*1.0.18* A responder can now press the take-charge key WHILE the prompt is still speaking, not only during the silent wait: the whole prompt (sentence + extension digits + key) is played as one interruptible Read that captures the keypress immediately. The take-charge confirmation the responder hears is now a DEDICATED message ("you have taken charge of the alarm of extension N — good response"), distinct from the third-person speaker announcement ("the alarm of extension N has been taken charge of"); new built-in clips lw-taken-pre/lw-taken-post (Italian), with fallback to the speaker audio if absent.
 		*1.0.17* When a responder presses the take-charge key they now hear a spoken confirmation ("the alarm of extension N has been taken charge of") instead of just a beep. The take-charge prompt is repeated to a responder who does not press the key, and the number of repeats is now configurable (Settings → "Prompt repeats", 1-10, default 3) instead of the previous fixed 3.
@@ -62,6 +63,7 @@
 			<field name="ts" type="integer" notnull="true" default="0"/>
 			<field name="msg" type="string" length="16" notnull="true"/>
 			<field name="ext" type="string" length="16" notnull="false"/>
+			<field name="num" type="integer" notnull="false" default="0"/>
 		</table>
 	</database>
 	<depends>

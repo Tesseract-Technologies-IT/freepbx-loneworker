@@ -40,9 +40,7 @@ try {
 			} else {
 				$agi->set_variable('LW_MSG', $a['msg']);
 				$agi->set_variable('LW_EXT', $a['ext']);
-				$agi->set_variable('LW_PRE', $a['pre']);
-				$agi->set_variable('LW_POST', $a['post']);
-				$agi->set_variable('LW_SAY', $a['say']);
+				$agi->set_variable('LW_NUM', (string) $a['num']); // per-occurrence number (e.g. minutes left)
 				$agi->set_variable('LW_LANG', $a['lang']);
 			}
 			$res = ['result' => 'ok', 'ext' => $ext];

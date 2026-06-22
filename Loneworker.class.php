@@ -439,10 +439,11 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		$sth = $this->db->prepare("SELECT * FROM loneworker_sessions WHERE state='ARMED' AND next_reminder_ts <= ? AND deadline_ts > ? ORDER BY next_reminder_ts ASC");
 		$sth->execute([$now, $now]);
 		foreach ($sth->fetchAll(\PDO::FETCH_ASSOC) as $r) {
-			$this->enqueueAnnounce('reminder', $r['ext']); // dedup avoids piling up duplicate reminders
+			$remMin = max(1, (int) ceil(((int) $r['deadline_ts'] - $now) / 60)); // minutes left until the alarm
+			$this->enqueueAnnounce('reminder', $r['ext'], $remMin); // dedup avoids piling up duplicate reminders
 			$u = $this->db->prepare('UPDATE loneworker_sessions SET next_reminder_ts = next_reminder_ts + ? WHERE ext=?');
 			$u->execute([(int) $s['reminder_interval'], $r['ext']]);
-			$this->logEvent('REMINDER', $r['ext'], []);
+			$this->logEvent('REMINDER', $r['ext'], ['mins_left' => $remMin]);
 			if ($output) { $output->writeln('REMINDER ' . $r['ext']); }
 		}
 
@@ -493,14 +494,14 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	/** Enqueue an announcement (dedup identical pending msg+ext) and make sure a drain channel plays it.
 	 *  The queue lives in a DB table (NOT kvstore, which is cached per-process: the CLI and the drain
 	 *  AGI run in separate processes and would clobber each other's view of a cached queue). */
-	public function enqueueAnnounce($msg, $ext) {
+	public function enqueueAnnounce($msg, $ext, $num = 0) {
 		$ext = (string) $ext;
 		try {
 			$chk = $this->db->prepare('SELECT COUNT(*) FROM loneworker_announce_queue WHERE msg=? AND ext=?');
 			$chk->execute([$msg, $ext]);
 			if ((int) $chk->fetchColumn() === 0) {
-				$ins = $this->db->prepare('INSERT INTO loneworker_announce_queue (prio, ts, msg, ext) VALUES (?,?,?,?)');
-				$ins->execute([$this->announcePriority($msg), time(), $msg, $ext]);
+				$ins = $this->db->prepare('INSERT INTO loneworker_announce_queue (prio, ts, msg, ext, num) VALUES (?,?,?,?,?)');
+				$ins->execute([$this->announcePriority($msg), time(), $msg, $ext, (int) $num]);
 				$this->logEvent('PAGING_QUEUED', $ext, ['msg' => $msg]);
 			}
 		} catch (\Throwable $e) { $this->logEvent('ERROR', $ext, ['detail' => 'enqueue']); }
@@ -562,19 +563,17 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 	public function nextAnnouncement() {
 		try {
 			for ($try = 0; $try < 5; $try++) {
-				$row = $this->db->query('SELECT id, msg, ext FROM loneworker_announce_queue ORDER BY prio ASC, id ASC LIMIT 1')->fetch(\PDO::FETCH_ASSOC);
+				$row = $this->db->query('SELECT id, msg, ext, num FROM loneworker_announce_queue ORDER BY prio ASC, id ASC LIMIT 1')->fetch(\PDO::FETCH_ASSOC);
 				if (!$row) { return null; }
 				$del = $this->db->prepare('DELETE FROM loneworker_announce_queue WHERE id=?');
 				$del->execute([$row['id']]);
 				if ($del->rowCount() < 1) { continue; } // another drainer took it; try the next row
 				$s = $this->getSettings();
-				$map = ['arm' => 'armed', 'confirm' => 'confirmed', 'reminder' => 'reminder', 'alarm' => 'alarm', 'ack' => 'ack', 'disarm' => 'disarmed', 'call' => 'call'];
-				$base = $map[$row['msg']] ?? $row['msg'];
-				$say = in_array($row['msg'], ['arm', 'reminder'], true) ? ((new \featurecode('loneworker', 'checkin'))->getCodeActive() ?: '') : '';
 				$lang = trim((string) ($s['digit_language'] ?? 'it')) ?: 'it';
+				// The drain dialplan renders the message from its type (Gosub ann-<msg>); we only
+				// pass the extension, the per-occurrence number (e.g. minutes left) and the language.
 				$this->logEvent('PAGING', $row['ext'], ['msg' => $row['msg']]);
-				return ['msg' => $row['msg'], 'ext' => (string) $row['ext'], 'pre' => $this->clipPath($base . '-pre'),
-					'post' => $this->clipPath($base . '-post'), 'say' => $say, 'lang' => $lang];
+				return ['msg' => (string) $row['msg'], 'ext' => (string) $row['ext'], 'num' => (int) $row['num'], 'lang' => $lang];
 			}
 		} catch (\Throwable $e) {}
 		return null;
@@ -808,7 +807,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		}
 
 		// Built-in announcement audio: the fixed set must be installed under <sounds>/loneworker.
-		$reqd = ['armed-pre', 'alarm-pre', 'call-pre', 'reminder-pre', 'ack-pre', 'disarmed-pre', 'confirmed-pre'];
+		$reqd = ['arm-1', 'rem-1', 'alarm-1', 'call-1', 'ack-1', 'conf-1', 'dis-1', 'taken-1'];
 		$dir = $this->soundsDir() . '/loneworker';
 		$miss = [];
 		foreach ($reqd as $c) { if (!is_file($dir . '/lw-' . $c . '.wav')) { $miss[] = $c; } }

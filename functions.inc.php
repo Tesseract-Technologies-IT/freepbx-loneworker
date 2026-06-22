@@ -65,35 +65,65 @@ function loneworker_get_config($engine) {
 	// reachable when the feature code is dialled (ext-featurecodes -> from-internal,<code>,1)
 	$ext->addInclude('from-internal-additional', $ctx);
 
-	// --- Dynamic announcement context on the speakers ------------------------
-	// The Originate sets Exten=<message type> and CallerID=<extension>; each exten here
-	// plays pre + extension number (from CALLERID) + post. No channel variables.
+	// --- Dynamic, self-explaining announcements on the speakers --------------
+	// Each message is a sequence of fragments interleaved with spoken numbers, so it explains
+	// exactly what happens next using the REAL configured values (minutes, codes), spoken aloud.
+	// The config-derived numbers are baked here at reload, so changing the timers and reloading
+	// updates the audio automatically; the extension and the per-occurrence value (e.g. minutes
+	// left until the deadline) come from the channel at play time.
 	$ac = 'app-loneworker-announce';
-	$checkin = $actions['checkin']; // check-in number, spoken dynamically
-	$lang = trim((string) ($s['digit_language'] ?? 'it')) ?: 'it';
-	// Audio is the built-in, fixed set shipped with the module (not user-editable).
-	loneworker_add_ann($ext, $ac, 'arm',      loneworker_default('armed-pre'),     loneworker_default('armed-post'),     $checkin, $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'confirm',  loneworker_default('confirmed-pre'), loneworker_default('confirmed-post'), '',       $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'reminder', loneworker_default('reminder-pre'),  loneworker_default('reminder-post'),  $checkin, $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'alarm',    loneworker_default('alarm-pre'),     loneworker_default('alarm-post'),     '',       $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'ack',      loneworker_default('ack-pre'),       loneworker_default('ack-post'),       '',       $lang, $agi);
-	loneworker_add_ann($ext, $ac, 'disarm',   loneworker_default('disarmed-pre'),  '',                                   '',       $lang, $agi);
-	// 'call' is the responder prompt; also exposed here so it can be previewed on the speakers from the GUI.
-	loneworker_add_ann($ext, $ac, 'call',     loneworker_default('call-pre'),      loneworker_default('call-post'),      '',       $lang, $agi);
+	$checkin = $actions['checkin'] ?: '';                                   // check-in code (SayDigits, baked)
+	$lang  = trim((string) ($s['digit_language'] ?? 'it')) ?: 'it';
+	$raMin = max(1, (int) round((int) $s['reminder_after'] / 60));          // first reminder after N min
+	$toMin = max(1, (int) round((int) $s['timeout'] / 60));                 // alarm after N min
+	$riMin = max(1, (int) round((int) $s['reminder_interval'] / 60));       // reminder repeats every N min
+	$ckey  = preg_match('/^[0-9*]$/', (string) ($s['confirm_key'] ?? '1')) ? (string) $s['confirm_key'] : '1';
+	// token kinds: ['p',base] Playback fragment | ['ext'] SayDigits ${LW_EXT} | ['num'] SayNumber ${LW_NUM}
+	//              ['n',int] SayNumber baked config | ['d',digits] SayDigits baked config
+	$scripts = [
+		'arm'      => [['p','arm-1'],['ext'],['p','arm-2'],['n',$raMin],['p','arm-3'],['d',$checkin],['p','arm-4'],['n',$toMin],['p','arm-5']],
+		'reminder' => [['p','rem-1'],['ext'],['p','rem-2'],['num'],['p','rem-3'],['d',$checkin],['p','rem-4'],['n',$riMin],['p','rem-5']],
+		'alarm'    => [['p','alarm-1'],['ext'],['p','alarm-2']],
+		'ack'      => [['p','ack-1'],['ext'],['p','ack-2']],
+		'confirm'  => [['p','conf-1'],['ext'],['p','conf-2'],['n',$raMin],['p','conf-3'],['n',$toMin],['p','conf-4']],
+		'disarm'   => [['p','dis-1'],['ext'],['p','dis-2']],
+		'call'     => [['p','call-1'],['ext'],['p','call-2'],['d',$ckey]],  // preview of the responder prompt
+	];
+	$emit = function ($exten, $tokens) use (&$ext, $ac) {
+		foreach ($tokens as $t) {
+			switch ($t[0]) {
+				case 'p':   $c = loneworker_default($t[1]); if ($c !== '') { $ext->add($ac, $exten, '', new ext_playback($c)); } break;
+				case 'ext': $ext->add($ac, $exten, '', new ext_saydigits('${LW_EXT}')); break;
+				case 'num': $ext->add($ac, $exten, '', new ext_execif('$["${LW_NUM}" != ""]', 'SayNumber', '${LW_NUM},m')); break;
+				case 'n':   if ((int) $t[1] > 0) { $ext->add($ac, $exten, '', new ext_saynumber((string) (int) $t[1], 'm')); } break;
+				case 'd':   if ((string) $t[1] !== '') { $ext->add($ac, $exten, '', new ext_saydigits((string) $t[1])); } break;
+			}
+		}
+	};
+	foreach ($scripts as $type => $tokens) {
+		// shared routine (assumes channel already answered + language set); plays the message; returns
+		$emit('ann-' . $type, $tokens);
+		$ext->add($ac, 'ann-' . $type, '', new ext_return(''));
+		// GUI preview entry (Originate Exten=<type>, CallerID=<ext>): answer, set vars, play, hang up
+		$ext->add($ac, $type, '1', new ext_answer(''));
+		$ext->add($ac, $type, '', new ext_setvar('CHANNEL(language)', $lang));
+		$ext->add($ac, $type, '', new ext_setvar('LW_EXT', '${CALLERID(num)}'));
+		$ext->add($ac, $type, '', new ext_setvar('LW_NUM', (string) max(1, $toMin - $raMin))); // sample "minutes left"
+		$ext->add($ac, $type, '', new ext_wait('1'));
+		$ext->add($ac, $type, '', new ext_gosub('1', 'ann-' . $type, $ac));
+		$ext->add($ac, $type, '', new ext_hangup(''));
+	}
 
 	// 'drain' = one paging channel that plays the WHOLE queue in sequence (keeps the page up
 	// between messages so back-to-back announcements don't collide). Each loop the AGI 'nextann'
-	// pops the next item and exposes it as LW_* channel vars; LW_MSG empty => queue drained.
+	// pops the next item and exposes LW_MSG/LW_EXT/LW_NUM/LW_LANG; empty LW_MSG => queue drained.
 	$dr = 'drain';
 	$ext->add($ac, $dr, '1', new ext_answer(''));
 	$ext->add($ac, $dr, '', new ext_wait('1'));
 	$ext->add($ac, $dr, 'loop', new ext_agi($agi . ',nextann'));
 	$ext->add($ac, $dr, '', new ext_gotoif('$["${LW_MSG}" = ""]', 'done'));
 	$ext->add($ac, $dr, '', new ext_setvar('CHANNEL(language)', '${LW_LANG}'));
-	$ext->add($ac, $dr, '', new ext_execif('$["${LW_PRE}" != ""]', 'Playback', '${LW_PRE}'));
-	$ext->add($ac, $dr, '', new ext_saydigits('${LW_EXT}'));
-	$ext->add($ac, $dr, '', new ext_execif('$["${LW_POST}" != ""]', 'Playback', '${LW_POST}'));
-	$ext->add($ac, $dr, '', new ext_execif('$["${LW_SAY}" != ""]', 'SayDigits', '${LW_SAY}'));
+	$ext->add($ac, $dr, '', new ext_gosub('1', 'ann-${LW_MSG}', $ac));
 	$ext->add($ac, $dr, '', new ext_goto('loop'));
 	$ext->add($ac, $dr, 'done', new ext_hangup(''));
 
@@ -141,20 +171,15 @@ function loneworker_get_config($engine) {
 	// Confirmation routine on each ANSWERED responder: up to 3 prompts; press 1 = take charge
 	// (AGI ack + Return → wins the Dial). If no confirm, hang up so the cascade moves on.
 	$cf    = 'app-loneworker-confirm';
-	$cpre  = loneworker_default('call-pre');
-	$cpost = loneworker_default('call-post');
+	$cpre  = loneworker_default('call-1');     // "Lone worker alarm. The operator of extension"
+	$cpost = loneworker_default('call-2');     // "did not confirm ... to take charge, press the key"
 	$ckey  = preg_match('/^[0-9*]$/', (string) ($s['confirm_key'] ?? '1')) ? (string) $s['confirm_key'] : '1'; // key to take charge
 	$ctmo  = max(3, (int) ($s['confirm_timeout'] ?? 15)); // seconds to wait for the key on each prompt
 	$crep  = max(1, min(10, (int) ($s['confirm_repeat'] ?? 3))); // times the prompt repeats if the key is not pressed
-	$apre  = loneworker_default('ack-pre');   // speaker "taken charge" announcement (fallback only)
-	$apost = loneworker_default('ack-post');
 	// Responder-specific take-charge confirmation (deliberately DIFFERENT wording from the speakers):
-	// "you have taken charge of the alarm of extension N". Falls back to the speaker audio if the
-	// dedicated clips are not installed.
-	$tpre  = loneworker_default('taken-pre');
-	$tpost = loneworker_default('taken-post');
-	$rcpre  = $tpre !== '' ? $tpre : $apre;
-	$rcpost = $tpost !== '' ? $tpost : $apost;
+	// "you have taken charge of the alarm of extension N. Reach them now ...".
+	$rcpre  = loneworker_default('taken-1');
+	$rcpost = loneworker_default('taken-2');
 	$keyfile = ctype_digit($ckey) ? 'digits/' . $ckey : ''; // spoken key as an interruptible digit file
 	$ext->add($cf, 's', '', new ext_answer(''));
 	$ext->add($cf, 's', '', new ext_setvar('CHANNEL(language)', $lang));
