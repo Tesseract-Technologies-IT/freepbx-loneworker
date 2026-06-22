@@ -84,8 +84,9 @@ and the live example are translated.
 | **702** | Check-in | Resets the timer of the caller's own session; "confirmed" announcement |
 | **703** | Disarm | Closes the caller's own session; "disarmed" announcement |
 
-(701/702/703 are the default feature codes; they are editable on the Settings page and in
-Admin → Feature Codes.)
+(701/702/703 are the preferred defaults, but at install the module **auto-assigns the first free
+feature codes** — avoiding extensions and other modules' codes — so it won't collide on a PBX where
+those are already taken. They're editable on the Settings page and in Admin → Feature Codes.)
 
 - Reminders on the speakers at `reminder_after`, then every `reminder_interval`, until the deadline.
 - On `timeout`: "alarm" announcement on the speakers + **all configured responders are called at

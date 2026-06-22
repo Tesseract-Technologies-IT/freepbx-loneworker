@@ -43,14 +43,39 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 
 	// ---------------------------------------------------------------- BMO
 
+	/** Pick free feature codes (arm/checkin/disarm) that don't clash with extensions or other
+	 *  modules' feature codes, so a fresh install doesn't collide on PBXs where 701/702/703 are
+	 *  already taken. Returns the first free consecutive triple from 701 upward; falls back to any
+	 *  three free numeric codes, then to the historical 701/702/703 as a last resort. */
+	private function pickFeatureCodes() {
+		$used = [];
+		foreach (array_keys($this->usedNumbers()) as $c) { $used[(string) $c] = true; }
+		for ($base = 701; $base <= 798; $base++) {
+			$t = [(string) $base, (string) ($base + 1), (string) ($base + 2)];
+			if (!isset($used[$t[0]]) && !isset($used[$t[1]]) && !isset($used[$t[2]])) {
+				return ['arm' => $t[0], 'checkin' => $t[1], 'disarm' => $t[2]];
+			}
+		}
+		$pick = [];
+		for ($n = 700; $n <= 999 && count($pick) < 3; $n++) {
+			$s = (string) $n;
+			if (!isset($used[$s])) { $pick[] = $s; $used[$s] = true; }
+		}
+		if (count($pick) === 3) { return ['arm' => $pick[0], 'checkin' => $pick[1], 'disarm' => $pick[2]]; }
+		return ['arm' => '701', 'checkin' => '702', 'disarm' => '703'];
+	}
+
 	public function install() {
 		// Tables are created by Doctrine (module.xml). Here: feature codes + Job.
-		foreach (['arm' => '701', 'checkin' => '702', 'disarm' => '703'] as $name => $code) {
+		// Feature codes are auto-assigned to the first free codes (not hard-coded) so they don't
+		// collide on PBXs where 701/702/703 are already in use. Existing codes are preserved.
+		$codes = $this->pickFeatureCodes();
+		$labels = ['arm' => _('Lone Worker: Arm'), 'checkin' => _('Lone Worker: Check-in'), 'disarm' => _('Lone Worker: Disarm')];
+		foreach (['arm', 'checkin', 'disarm'] as $name) {
 			$fcc = new \featurecode('loneworker', $name);
 			if ($fcc->getCode() == '' && $fcc->getDefault() == '') {
-				$labels = ['arm' => _('Lone Worker: Arm'), 'checkin' => _('Lone Worker: Check-in'), 'disarm' => _('Lone Worker: Disarm')];
 				$fcc->setDescription($labels[$name] ?? ('Lone Worker: ' . $name));
-				$fcc->setDefault($code);
+				$fcc->setDefault($codes[$name]);
 				$fcc->update();
 			}
 			unset($fcc);
