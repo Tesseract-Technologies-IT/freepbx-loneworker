@@ -925,11 +925,30 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		return $this->testAnnounceMsg('reminder');
 	}
 
-	/** Test: launch the alarm cascade to the responders (fake extension), without a session. */
+	/** A real, carrier-acceptable Caller ID for the alarm test, so it behaves like a real alarm
+	 *  (which presents the down worker's real extension) instead of the placeholder '000' that
+	 *  carriers reject — making the test fail even when the live alarm would work without any
+	 *  Caller ID configured. Order: explicit alarm CID > service extension > first internal
+	 *  responder > any system extension > '' (let the trunk/route decide). */
+	private function testCid($s) {
+		$outcid = trim((string) ($s['alarm_outbound_cid'] ?? ''));
+		if ($outcid !== '') { return $outcid; }
+		$callerExt = trim((string) ($s['alarm_caller_ext'] ?? ''));
+		if ($callerExt !== '') { return $callerExt; }
+		$names = [];
+		try { foreach (\FreePBX::Core()->getAllUsers() as $u) { $names[(string) $u['extension']] = true; } } catch (\Throwable $e) {}
+		foreach ($this->alarmMembers() as $m) { if (isset($names[$m])) { return (string) $m; } } // a real internal responder
+		if (!empty($names)) { return (string) array_key_first($names); }                          // any real extension
+		return '';
+	}
+
+	/** Test: launch the alarm cascade to the responders (no session). Presents a real Caller ID
+	 *  (see testCid) so the carrier does not reject it the way it rejected the old '000' placeholder. */
 	public function testAlarm() {
 		$s = $this->getSettings();
-		$ok = $this->originateAlarm('000', $s, self::TEST_ACCOUNT);
-		$this->logEvent('TEST', '000', ['what' => 'alarm', 'ok' => $ok]);
+		$cid = $this->testCid($s);
+		$ok = $this->originateAlarm($cid, $s, self::TEST_ACCOUNT);
+		$this->logEvent('TEST', $cid !== '' ? $cid : '000', ['what' => 'alarm', 'ok' => $ok, 'cid' => $cid]);
 		return $ok;
 	}
 
