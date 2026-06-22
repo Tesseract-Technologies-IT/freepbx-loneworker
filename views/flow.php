@@ -1,16 +1,60 @@
 <?php
 if (!defined('FREEPBX_IS_AUTH')) { die('No direct script access allowed'); }
-// Lone Worker — dynamic "Alarm flow" preview: where calls will go, from the current config.
+// Lone Worker — dynamic "Alarm flow" diagram (complete, with all branches + spoken messages),
+// generated from the current config and rendered with the bundled Mermaid.
 $f = $flow;
-function lwfbox($html, $color = '#f5f5f5', $border = '#ccc') {
-	return '<div style="display:inline-block;background:' . $color . ';border:1px solid ' . $border
-		. ';border-radius:6px;padding:8px 14px;margin:4px;text-align:center;max-width:520px">' . $html . '</div>';
-}
-function lwarrow($label = '') {
-	$l = $label !== '' ? '<div style="font-size:11px;color:#888">' . $label . '</div>' : '';
-	return '<div style="text-align:center;color:#bbb;line-height:1.1">' . $l . '<div style="font-size:20px">&darr;</div></div>';
-}
 $esc = fn($v) => htmlspecialchars((string) $v);
+$modeLabel = $f['mode'] === 'sequence' ? _('in sequence') : _('all at once');
+$postLabel = $f['confirm_action'] === 'hold' ? _('Session kept as taken-charge until disarm') : _('Session closed (incident over)');
+
+// --- build the complete branching flowchart (Mermaid) ---
+$L = [
+	'arm'      => sprintf(_('Operator arms (%s)'), $f['arm']),
+	'msgArmed' => _('Speakers: lone worker armed for extension N'),
+	'confirm'  => sprintf(_('Check-in (%s) within %d min?'), $f['checkin'], $f['timeout_min']),
+	'reminders' => _('reminders'),
+	'msgConfirmed' => _('Speakers: presence confirmed'),
+	'disarmLbl' => sprintf(_('Disarm (%s)'), $f['disarm']),
+	'msgDisarmed' => _('Speakers: system disarmed'),
+	'alarm'    => _('ALARM'),
+	'msgAlarm' => _('Speakers: extension N did not confirm'),
+	'call'     => sprintf(_('Call responders (%s)'), $modeLabel),
+	'repeat'   => sprintf(_('nobody confirms: repeat every %ds'), $f['repeat']),
+	'answered' => _('A responder answers?'),
+	'prompt'   => sprintf(_('To the responder: press %s to take charge'), $f['confirm_key']),
+	'key'      => sprintf(_('Presses %s within %ds?'), $f['confirm_key'], $f['confirm_timeout']),
+	'ack'      => _('Takes charge — all other calls stop'),
+	'msgAck'   => _('Speakers: alarm taken charge of'),
+	'post'     => $postLabel . ($f['confirm_announce'] ? '' : ''),
+	'yes' => _('yes'), 'no' => _('no'), 'timeout' => _('no: timeout'), 'hangup' => _('no / hang up'),
+];
+// sanitise label text for Mermaid (inside double quotes): drop quotes/newlines
+$q = function ($s) { return str_replace(['"', "\n", "\r"], ['', ' ', ' '], (string) $s); };
+$mm  = "flowchart TD\n";
+$mm .= '  A["' . $q($L['arm']) . '"]:::act --> MA["📢 ' . $q($L['msgArmed']) . '"]:::msg' . "\n";
+$mm .= '  MA --> W{"' . $q($L['confirm']) . '"}:::dec' . "\n";
+$mm .= '  W -->|"📢 ' . $q($L['reminders']) . '"| W' . "\n";
+$mm .= '  W -->|"' . $q($L['yes']) . '"| MC["📢 ' . $q($L['msgConfirmed']) . '"]:::msg' . "\n";
+$mm .= '  MC --> A' . "\n";
+$mm .= '  W -->|"' . $q($L['disarmLbl']) . '"| DZ' . "\n";
+$mm .= '  W -->|"' . $q($L['timeout']) . '"| AL(["⚠ ' . $q($L['alarm']) . '"]):::al' . "\n";
+$mm .= '  AL --> MAL["📢 ' . $q($L['msgAlarm']) . '"]:::msg' . "\n";
+$mm .= '  AL --> C{"📞 ' . $q($L['call']) . '"}:::dec' . "\n";
+$mm .= '  C -->|"' . $q($L['repeat']) . '"| AL' . "\n";
+$mm .= '  C --> ANS{"' . $q($L['answered']) . '"}:::dec' . "\n";
+$mm .= '  ANS -->|"' . $q($L['no']) . '"| C' . "\n";
+$mm .= '  ANS -->|"' . $q($L['yes']) . '"| PR["📢 ' . $q($L['prompt']) . '"]:::msg' . "\n";
+$mm .= '  PR --> K{"' . $q($L['key']) . '"}:::dec' . "\n";
+$mm .= '  K -->|"' . $q($L['hangup']) . '"| C' . "\n";
+$mm .= '  K -->|"' . $q($L['yes']) . '"| ACK["✅ ' . $q($L['ack']) . '"]:::act' . "\n";
+$mm .= '  ACK --> MACK["📢 ' . $q($L['msgAck']) . '"]:::msg' . "\n";
+$mm .= '  MACK --> P["🏁 ' . $q($L['post']) . '"]:::done' . "\n";
+$mm .= '  DZ["📢 ' . $q($L['msgDisarmed']) . '"]:::msg --> P' . "\n";
+$mm .= "  classDef msg fill:#d9edf7,stroke:#31708f,color:#222;\n";
+$mm .= "  classDef dec fill:#fcf8e3,stroke:#8a6d3b,color:#222;\n";
+$mm .= "  classDef al fill:#f2dede,stroke:#a94442,color:#222;\n";
+$mm .= "  classDef act fill:#dff0d8,stroke:#3c763d,color:#222;\n";
+$mm .= "  classDef done fill:#eee,stroke:#999,color:#222;\n";
 ?>
 <div id="toolbar-flow" style="margin-bottom:12px">
 	<a href="config.php?display=loneworker" class="btn btn-default"><i class="fa fa-dashboard"></i> <?php echo _('Dashboard') ?></a>
@@ -20,91 +64,62 @@ $esc = fn($v) => htmlspecialchars((string) $v);
 	<a href="config.php?display=loneworker&amp;view=settings" class="btn btn-default"><i class="fa fa-cog"></i> <?php echo _('Settings') ?></a>
 </div>
 
-<div class="alert alert-info"><i class="fa fa-sitemap"></i> <?php echo _('What happens on an alarm, based on the current configuration — so you can see in advance where the calls will go. Update it by changing the Settings.') ?></div>
+<div class="alert alert-info"><i class="fa fa-sitemap"></i> <?php echo _('Complete alarm flow generated from the current configuration — every branch (check-in, answered, key pressed, nobody confirms, disarm) and every spoken message (📢). Update it by changing the Settings.') ?></div>
 
-<div style="text-align:center">
-<?php
-// 1) arm
-echo lwfbox('<strong>' . _('Operator arms') . '</strong><br><span class="text-muted">' . sprintf(_('dials %s from their extension'), '<code>' . $esc($f['arm']) . '</code>') . '</span>', '#dff0d8', '#3c763d');
-echo lwarrow(sprintf(_('no check-in (%s) within %d min'), '<code>' . $esc($f['checkin']) . '</code>', $f['timeout_min']));
-// 2) alarm
-echo lwfbox('<strong style="color:#a94442">' . _('ALARM') . '</strong>', '#f2dede', '#a94442');
-echo lwarrow();
-// 3) speakers
-if ($f['paging'] !== '') {
-	echo lwfbox('<i class="fa fa-volume-up"></i> ' . sprintf(_('Announcement on the speakers (paging group %s)'), '<code>' . $esc($f['paging']) . '</code>'), '#d9edf7', '#31708f');
-} else {
-	echo lwfbox('<i class="fa fa-exclamation-triangle"></i> ' . _('No paging group set — no speaker announcement'), '#fcf8e3', '#8a6d3b');
-}
-echo lwarrow();
-// 4) responder cascade
-$mode = $f['mode'] === 'sequence'
-	? sprintf(_('Responders called ONE AT A TIME, in order (ring %ds each)'), $f['ring_time'])
-	: sprintf(_('ALL responders called at the same time (ring %ds)'), $f['ring_time']);
-echo lwfbox('<i class="fa fa-phone"></i> <strong>' . $mode . '</strong>', '#fcf8e3', '#8a6d3b');
-echo lwarrow();
-// responders
-if (empty($f['responders'])) {
-	echo lwfbox('<i class="fa fa-exclamation-triangle"></i> <strong>' . _('No responders configured — nobody is called!') . '</strong>', '#f2dede', '#a94442');
-} else {
-	echo '<div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:stretch">';
-	foreach ($f['responders'] as $i => $r) {
-		if ($r['type'] === 'internal') {
-			$body = '<strong>' . $esc($r['num']) . '</strong>' . ($r['name'] !== '' ? '<br><span class="text-muted">' . $esc($r['name']) . '</span>' : '')
-				. '<br><span class="label label-success">' . _('internal') . '</span>';
-			$col = '#dff0d8'; $bd = '#3c763d';
-		} else {
-			if (!$r['matched']) { $line = '<span class="label label-danger">' . _('no outbound route!') . '</span>'; $col = '#f2dede'; $bd = '#a94442'; }
-			elseif ($r['cid_blocked']) { $line = '<span class="label label-warning">' . _('route filtered by Caller ID') . '</span>'; $col = '#fcf8e3'; $bd = '#8a6d3b'; }
-			elseif (!$r['trunk_ok']) { $line = '<span class="label label-danger">' . sprintf(_('route "%s" — trunk disabled'), $esc($r['route'])) . '</span>'; $col = '#f2dede'; $bd = '#a94442'; }
-			else { $line = '<span class="label label-info">' . sprintf(_('via route "%s"'), $esc($r['route'])) . '</span>'; $col = '#d9edf7'; $bd = '#31708f'; }
-			$body = '<strong>' . $esc($r['num']) . '</strong><br><span class="text-muted">' . _('external') . '</span><br>' . $line;
-		}
-		$seq = $f['mode'] === 'sequence' ? ('<div style="font-size:11px;color:#888">' . sprintf(_('step %d'), $i + 1) . '</div>') : '';
-		echo lwfbox($seq . $body, $col, $bd);
-	}
-	echo '</div>';
-	if ($f['has_external']) {
-		$cid = $f['cid'] !== '' ? ('<code>' . $esc($f['cid']) . '</code>') : ('<span class="text-warning">' . _('the down worker\'s extension (may be rejected)') . '</span>');
-		echo '<div style="font-size:12px;color:#666;margin:6px">' . sprintf(_('External calls present Caller ID: %s'), $cid) . '</div>';
-	}
-}
-echo lwarrow();
-// 5) take charge
-echo lwfbox(sprintf(_('First to press %s (within %ds) takes charge → all other calls stop'),
-	'<code>' . $esc($f['confirm_key']) . '</code>', $f['confirm_timeout']), '#dff0d8', '#3c763d');
-echo lwarrow();
-// 6) post-confirm
-$post = $f['confirm_action'] === 'hold' ? _('Session kept as "taken charge" until an operator disarms') : _('Session closed (incident over)');
-if ($f['confirm_announce']) { $post .= ' · ' . _('"taken charge" announced on the speakers'); }
-echo lwfbox($post, '#f5f5f5', '#ccc');
-?>
+<div class="panel panel-default">
+	<div class="panel-body" style="overflow:auto">
+		<pre class="mermaid" style="text-align:center;background:transparent;border:0"><?php echo $esc($mm); ?></pre>
+		<div id="lw-mm-fallback" class="text-muted" style="display:none"><?php echo _('(Diagram could not be rendered here — use the source below.)') ?></div>
+	</div>
 </div>
 
-<div class="alert alert-warning" style="margin-top:14px"><i class="fa fa-repeat"></i>
-	<?php echo sprintf(_('If nobody takes charge, the whole alarm (announcement + calls) repeats every %d seconds until someone presses %s or an operator disarms (%s). Multiple operators can be in alarm at once, each escalating independently.'),
-		$f['repeat'], '<code>' . $esc($f['confirm_key']) . '</code>', '<code>' . $esc($f['disarm']) . '</code>'); ?>
+<!-- Concrete responders & outbound routing (what the generic "Call responders" box expands to) -->
+<div class="panel panel-default">
+	<div class="panel-heading"><strong><i class="fa fa-phone"></i> <?php echo sprintf(_('Responders, in call order — %s'), $modeLabel) ?></strong></div>
+	<div class="panel-body">
+		<?php if (empty($f['responders'])): ?>
+			<div class="alert alert-danger" style="margin:0"><i class="fa fa-exclamation-triangle"></i> <?php echo _('No responders configured — nobody is called!') ?></div>
+		<?php else: ?>
+		<ol style="margin:0 0 0 18px">
+			<?php foreach ($f['responders'] as $r): ?>
+			<li style="margin:3px 0">
+				<strong><?php echo $esc($r['num']) ?></strong>
+				<?php if ($r['type'] === 'internal'): ?>
+					<span class="label label-success"><?php echo _('internal') ?></span> <?php echo $esc($r['name']) ?>
+				<?php else:
+					if (!$r['matched']) { echo '<span class="label label-danger">' . _('external — NO outbound route!') . '</span>'; }
+					elseif ($r['cid_blocked']) { echo '<span class="label label-warning">' . _('external — route filtered by Caller ID') . '</span>'; }
+					elseif (!$r['trunk_ok']) { echo '<span class="label label-danger">' . sprintf(_('external — route "%s", trunk disabled'), $esc($r['route'])) . '</span>'; }
+					else { echo '<span class="label label-info">' . sprintf(_('external — via route "%s"'), $esc($r['route'])) . '</span>'; }
+				endif; ?>
+			</li>
+			<?php endforeach; ?>
+		</ol>
+		<?php if ($f['has_external']): ?>
+			<p class="help-block" style="margin-top:8px"><?php echo sprintf(_('External calls present Caller ID: %s'),
+				$f['cid'] !== '' ? '<code>' . $esc($f['cid']) . '</code>' : ('<span class="text-warning">' . _('the down worker\'s extension (may be rejected)') . '</span>')); ?></p>
+		<?php endif; ?>
+		<?php endif; ?>
+		<p class="help-block" style="margin-top:6px">
+			<?php echo sprintf(_('Speakers: paging group %s · take-charge key: %s · ring %ds · repeat every %ds'),
+				$f['paging'] !== '' ? ('<code>' . $esc($f['paging']) . '</code>') : ('<span class="text-danger">' . _('NOT SET') . '</span>'),
+				'<code>' . $esc($f['confirm_key']) . '</code>', $f['ring_time'], $f['repeat']); ?>
+		</p>
+	</div>
 </div>
 
-<?php
-// Mermaid source for export (mermaid.live, docs)
-$mm = "flowchart TD\n";
-$mm .= "  A[\"Operator arms (" . $f['arm'] . ")\"] -->|no check-in " . $f['timeout_min'] . "m| B((ALARM))\n";
-$mm .= "  B --> P[\"Speakers: paging " . ($f['paging'] !== '' ? $f['paging'] : 'NOT SET') . "\"]\n";
-$mm .= "  B --> C{\"" . ($f['mode'] === 'sequence' ? 'Call in sequence' : 'Call all at once') . "\"}\n";
-if (empty($f['responders'])) {
-	$mm .= "  C --> X[\"NO RESPONDERS\"]\n";
-} else {
-	foreach ($f['responders'] as $i => $r) {
-		$lbl = $r['num'] . ($r['type'] === 'internal' ? (' ' . str_replace(['"', "\n"], '', (string) $r['name'])) : (' ext' . (!empty($r['route']) ? ' via ' . str_replace('"', '', $r['route']) : '')));
-		$mm .= "  C --> R{$i}[\"" . trim($lbl) . "\"]\n";
-		$mm .= "  R{$i} --> K\n";
-	}
-}
-$mm .= "  K[\"First to press " . $f['confirm_key'] . " takes charge\"] --> Z[\"" . ($f['confirm_action'] === 'hold' ? 'Kept as taken-charge' : 'Session closed') . "\"]\n";
-$mm .= "  K -.->|nobody: repeat every " . $f['repeat'] . "s| B\n";
-?>
-<div style="margin-top:10px">
-	<button type="button" class="btn btn-default btn-sm" onclick="var t=document.getElementById('lw-mm');t.style.display=t.style.display==='none'?'block':'none';"><i class="fa fa-code"></i> <?php echo _('Diagram source (Mermaid) — for export') ?></button>
-	<textarea id="lw-mm" class="form-control" rows="10" style="display:none;margin-top:8px;font-family:monospace;font-size:12px" readonly><?php echo htmlspecialchars($mm); ?></textarea>
+<div style="margin-top:6px">
+	<button type="button" class="btn btn-default btn-sm" onclick="var t=document.getElementById('lw-mm-src');t.style.display=t.style.display==='none'?'block':'none';"><i class="fa fa-code"></i> <?php echo _('Diagram source (Mermaid) — for export') ?></button>
+	<textarea id="lw-mm-src" class="form-control" rows="12" style="display:none;margin-top:8px;font-family:monospace;font-size:12px" readonly><?php echo $esc($mm); ?></textarea>
 </div>
+
+<script src="modules/loneworker/assets/vendor/mermaid.min.js"></script>
+<script>
+(function () {
+	try {
+		if (typeof mermaid === 'undefined') { document.getElementById('lw-mm-fallback').style.display = 'block'; return; }
+		mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', flowchart: { useMaxWidth: true } });
+		mermaid.run({ querySelector: '.mermaid' }).catch(function () { document.getElementById('lw-mm-fallback').style.display = 'block'; });
+	} catch (e) { document.getElementById('lw-mm-fallback').style.display = 'block'; }
+})();
+</script>
