@@ -18,6 +18,10 @@ switch ($view) {
 		$heading = _('Lone Worker: Session log');
 		$content = load_view(__DIR__ . '/views/history.php', ['settings' => $lw->getSettings()]);
 	break;
+	case 'flow':
+		$heading = _('Lone Worker: Alarm flow');
+		$content = load_view(__DIR__ . '/views/flow.php', ['flow' => $lw->alarmFlow()]);
+	break;
 	case 'sessions':
 		$heading = _('Lone Worker: Active sessions');
 		$content = load_view(__DIR__ . '/views/grid.php', ['settings' => $lw->getSettings()]);

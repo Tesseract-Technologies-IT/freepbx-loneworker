@@ -2,11 +2,12 @@
 	<rawname>loneworker</rawname>
 	<repo>local</repo>
 	<name>Lone Worker</name>
-	<version>1.0.11</version>
+	<version>1.0.12</version>
 	<publisher>Tesseract Technologies</publisher>
 	<license>GPLv3+</license>
 	<licenselink>http://www.gnu.org/licenses/gpl-3.0.txt</licenselink>
 	<changelog>
+		*1.0.12* Add an "Alarm flow" view: a diagram generated dynamically from the current configuration showing where an alarm goes — operator arm, timeout, speaker announcement, the responders in call order/mode, and for each external number the resolved outbound route/trunk and Caller ID, plus take-charge key and repeat behaviour. Includes an exportable Mermaid diagram source.
 		*1.0.11* The responder prompt now speaks the configured take-charge key dynamically (SayDigits) instead of having it baked into the audio, so the message stays correct if you change the "Key to take charge" setting. The call-post clip was re-recorded accordingly.
 		*1.0.10* Feature codes are no longer hard-coded to 701/702/703: on a fresh install the module auto-assigns the first free codes (avoiding extensions and other modules feature codes), so it does not collide on PBXs where those codes are already in use. Existing/admin-set codes are preserved on upgrade.
 		*1.0.9* Fix take-charge from a real responder phone: the alarmed operator extension is now passed to the confirm routine as an inherited channel variable (the U() Gosub argument resolved to the wrong value), so pressing the confirm key actually takes charge and the call log records who answered / who confirmed.

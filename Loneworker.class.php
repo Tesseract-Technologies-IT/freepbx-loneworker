@@ -836,6 +836,46 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		return $r;
 	}
 
+	/** Structured description of where an alarm will go, from the current config — for the
+	 *  "Alarm flow" preview: responders in order, mode, and per-external route/trunk/Caller ID. */
+	public function alarmFlow() {
+		$s = $this->getSettings();
+		$fc = $this->getFeatureCodes();
+		$names = [];
+		try { foreach (\FreePBX::Core()->getAllUsers() as $u) { $names[(string) $u['extension']] = $u['name']; } } catch (\Throwable $e) {}
+		$members = $this->alarmMembers();
+		$routes = $this->loadOutboundRoutes();
+		$outcid = trim((string) ($s['alarm_outbound_cid'] ?? ''));
+		$callerExt = trim((string) ($s['alarm_caller_ext'] ?? ''));
+		$identity = $outcid !== '' ? $outcid : $callerExt;
+		$resp = [];
+		foreach ($members as $m) {
+			if (isset($names[$m])) {
+				$resp[] = ['num' => $m, 'type' => 'internal', 'name' => $names[$m]];
+			} else {
+				$r = $this->matchOutbound($m, $identity, $routes);
+				$resp[] = ['num' => $m, 'type' => 'external', 'matched' => $r['matched'],
+					'route' => $r['route'], 'trunk_ok' => $r['trunk_ok'], 'cid_blocked' => $r['cid_blocked']];
+			}
+		}
+		if ($outcid !== '') { $cid = $outcid; $cidNote = 'explicit'; }
+		elseif ($callerExt !== '') { $eff = $this->astdbOutboundCid($callerExt); $cid = $eff; $cidNote = 'ext:' . $callerExt; }
+		else { $cid = ''; $cidNote = 'downworker'; }
+		return [
+			'arm' => $fc['arm'] ?: '—', 'checkin' => $fc['checkin'] ?: '—', 'disarm' => $fc['disarm'] ?: '—',
+			'timeout_min' => max(1, (int) round((int) $s['timeout'] / 60)),
+			'reminder_after_min' => max(1, (int) round((int) $s['reminder_after'] / 60)),
+			'reminder_interval_min' => max(1, (int) round((int) $s['reminder_interval'] / 60)),
+			'paging' => trim((string) $s['paging_group']),
+			'mode' => (($s['alarm_mode'] ?? 'simultaneous') === 'sequence') ? 'sequence' : 'simultaneous',
+			'ring_time' => (int) $s['ring_time'], 'repeat' => (int) $s['alarm_repeat'],
+			'confirm_key' => (string) $s['confirm_key'], 'confirm_timeout' => (int) $s['confirm_timeout'],
+			'confirm_action' => $s['confirm_action'], 'confirm_announce' => !empty($s['confirm_announce']),
+			'responders' => $resp, 'cid' => $cid, 'cid_note' => $cidNote,
+			'has_external' => (bool) array_filter($resp, fn($r) => $r['type'] === 'external'),
+		];
+	}
+
 	// --------------------------------------------------------------- GUI
 
 	public function getActionBar($request) {

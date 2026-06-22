@@ -15,6 +15,7 @@ $evLabels = [
 	<a href="config.php?display=loneworker&amp;view=sessions" class="btn btn-default"><i class="fa fa-list"></i> <?php echo _('Active sessions') ?></a>
 	<a href="config.php?display=loneworker&amp;view=history" class="btn btn-default"><i class="fa fa-folder-open"></i> <?php echo _('Session log') ?></a>
 	<a href="config.php?display=loneworker&amp;view=events" class="btn btn-default"><i class="fa fa-history"></i> <?php echo _('Event history') ?></a>
+	<a href="config.php?display=loneworker&amp;view=flow" class="btn btn-default"><i class="fa fa-sitemap"></i> <?php echo _('Alarm flow') ?></a>
 	<a href="config.php?display=loneworker&amp;view=settings" class="btn btn-default"><i class="fa fa-cog"></i> <?php echo _('Settings') ?></a>
 	<span class="pull-right" id="lw-dash-updated" style="line-height:34px;color:#888"></span>
 </div>

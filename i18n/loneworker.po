@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: loneworker 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-22 09:04+0200\n"
+"POT-Creation-Date: 2026-06-22 09:17+0200\n"
 "PO-Revision-Date: 2026-06-18 15:13+0200\n"
 "Last-Translator: Tesseract Technologies\n"
 "Language-Team: Italian\n"
@@ -36,15 +36,15 @@ msgstr "interno %s (%s)"
 msgid "feature code %s/%s"
 msgstr "feature code %s/%s"
 
-#: Loneworker.class.php:207 views/settings.php:222
+#: Loneworker.class.php:207 views/settings.php:223
 msgid "Arm code"
 msgstr "Codice di armamento"
 
-#: Loneworker.class.php:207 views/settings.php:223
+#: Loneworker.class.php:207 views/settings.php:224
 msgid "Check-in code"
 msgstr "Codice di conferma"
 
-#: Loneworker.class.php:207 views/settings.php:224
+#: Loneworker.class.php:207 views/settings.php:225
 msgid "Disarm code"
 msgstr "Codice di disarmo"
 
@@ -175,11 +175,11 @@ msgid "Alarm repeat interval is shorter than the ring time: alarm rounds may ove
 msgstr "L'intervallo di ripetizione allarme è inferiore alla durata squillo: i giri d'allarme potrebbero sovrapporsi."
 
 # ---- action bar ----
-#: Loneworker.class.php:845
+#: Loneworker.class.php:885
 msgid "Reset"
 msgstr "Ripristina"
 
-#: Loneworker.class.php:846
+#: Loneworker.class.php:886
 msgid "Submit"
 msgstr "Salva"
 
@@ -195,15 +195,20 @@ msgstr "Uomo a Terra: Storico eventi"
 msgid "Lone Worker: Session log"
 msgstr "Uomo a Terra: Registro sessioni"
 
+# ---- feature code labels ----
 #: page.loneworker.php:22
+msgid "Lone Worker: Alarm flow"
+msgstr "Uomo a Terra: Diagramma allarme"
+
+#: page.loneworker.php:26
 msgid "Lone Worker: Active sessions"
 msgstr "Uomo a Terra: Sessioni attive"
 
-#: page.loneworker.php:26
+#: page.loneworker.php:30
 msgid "Lone Worker: Dashboard"
 msgstr "Uomo a Terra: Dashboard"
 
-#: views/dashboard.php:6 views/dashboard.php:99 views/events.php:5
+#: views/dashboard.php:6 views/dashboard.php:100 views/events.php:5
 #: views/history.php:5
 msgid "Armed"
 msgstr "Armato"
@@ -228,7 +233,7 @@ msgstr "Allarme"
 msgid "Alarm re-call"
 msgstr "Richiamo allarme"
 
-#: views/dashboard.php:8 views/dashboard.php:28 views/dashboard.php:100
+#: views/dashboard.php:8 views/dashboard.php:29 views/dashboard.php:101
 #: views/events.php:11 views/history.php:7
 msgid "Taken charge"
 msgstr "Preso in carico"
@@ -261,18 +266,18 @@ msgstr "Prova"
 msgid "Error"
 msgstr "Errore"
 
-#: views/dashboard.php:14 views/events.php:22 views/grid.php:31
-#: views/history.php:12 views/settings.php:70
+#: views/dashboard.php:14 views/events.php:22 views/flow.php:16
+#: views/grid.php:31 views/history.php:12 views/settings.php:70
 msgid "Dashboard"
 msgstr "Dashboard"
 
-#: views/dashboard.php:15 views/events.php:23 views/grid.php:32
-#: views/history.php:13 views/settings.php:71
+#: views/dashboard.php:15 views/events.php:23 views/flow.php:17
+#: views/grid.php:32 views/history.php:13 views/settings.php:71
 msgid "Active sessions"
 msgstr "Sessioni attive"
 
-#: views/dashboard.php:16 views/events.php:24 views/grid.php:33
-#: views/history.php:14 views/settings.php:72
+#: views/dashboard.php:16 views/events.php:24 views/flow.php:18
+#: views/grid.php:33 views/history.php:14 views/settings.php:72
 msgid "Session log"
 msgstr "Registro sessioni"
 
@@ -281,185 +286,298 @@ msgstr "Registro sessioni"
 msgid "Event history"
 msgstr "Storico eventi"
 
+#: views/dashboard.php:18 views/events.php:26 views/flow.php:19
+#: views/grid.php:35 views/history.php:16 views/settings.php:74
+msgid "Alarm flow"
+msgstr "Diagramma allarme"
+
 # ---- grid ----
-#: views/dashboard.php:18 views/events.php:26 views/grid.php:35
-#: views/history.php:16 views/settings.php:74
+#: views/dashboard.php:19 views/events.php:27 views/flow.php:20
+#: views/grid.php:36 views/history.php:17 views/settings.php:75
 msgid "Settings"
 msgstr "Impostazioni"
 
-#: views/dashboard.php:26
+#: views/dashboard.php:27
 msgid "Armed now"
 msgstr "Armati ora"
 
-#: views/dashboard.php:27
+#: views/dashboard.php:28
 msgid "In alarm now"
 msgstr "In allarme ora"
 
-#: views/dashboard.php:29
+#: views/dashboard.php:30
 msgid "Armed today"
 msgstr "Armati oggi"
 
-#: views/dashboard.php:30
+#: views/dashboard.php:31
 msgid "Alarms today"
 msgstr "Allarmi oggi"
 
-#: views/dashboard.php:31 views/dashboard.php:100 views/dashboard.php:128
+#: views/dashboard.php:32 views/dashboard.php:101 views/dashboard.php:129
 msgid "Avg. take-charge"
 msgstr "Tempo medio presa in carico"
 
-#: views/dashboard.php:50
+#: views/dashboard.php:51
 msgid "Live sessions"
 msgstr "Sessioni in tempo reale"
 
-#: views/dashboard.php:53 views/dashboard.php:98 views/events.php:34
-#: views/grid.php:43
+#: views/dashboard.php:54 views/dashboard.php:99 views/events.php:35
+#: views/grid.php:44
 msgid "Extension"
 msgstr "Interno"
 
-#: views/dashboard.php:53 views/dashboard.php:98 views/events.php:35
-#: views/grid.php:44 views/history.php:36
+#: views/dashboard.php:54 views/dashboard.php:99 views/events.php:36
+#: views/grid.php:45 views/history.php:37
 msgid "Operator"
 msgstr "Operatore"
 
-#: views/dashboard.php:54 views/grid.php:45
+#: views/dashboard.php:55 views/grid.php:46
 msgid "State"
 msgstr "Stato"
 
-#: views/dashboard.php:54
+#: views/dashboard.php:55
 msgid "Time left / since"
 msgstr "Tempo rimasto / da"
 
-#: views/dashboard.php:63
+#: views/dashboard.php:64
 msgid "Announcement queue (speakers)"
 msgstr "Coda annunci (altoparlanti)"
 
-#: views/dashboard.php:68
+#: views/dashboard.php:69
 msgid "Live events"
 msgstr "Eventi in tempo reale"
 
-#: views/dashboard.php:77
+#: views/dashboard.php:78
 msgid "Reports"
 msgstr "Report"
 
-#: views/dashboard.php:80 views/history.php:25
+#: views/dashboard.php:81 views/history.php:26
 msgid "Today"
 msgstr "Oggi"
 
-#: views/dashboard.php:81 views/history.php:26
+#: views/dashboard.php:82 views/history.php:27
 msgid "Last 7 days"
 msgstr "Ultimi 7 giorni"
 
-#: views/dashboard.php:82 views/history.php:27
+#: views/dashboard.php:83 views/history.php:28
 msgid "Last 30 days"
 msgstr "Ultimi 30 giorni"
 
-#: views/dashboard.php:84
+#: views/dashboard.php:85
 msgid "Export CSV"
 msgstr "Esporta CSV"
 
-#: views/dashboard.php:89
+#: views/dashboard.php:90
 msgid "Alarms vs check-ins over time"
 msgstr "Allarmi vs conferme nel tempo"
 
-#: views/dashboard.php:92 views/dashboard.php:99
+#: views/dashboard.php:93 views/dashboard.php:100
 msgid "Alarms"
 msgstr "Allarmi"
 
-#: views/dashboard.php:93
+#: views/dashboard.php:94
 msgid "Check-ins"
 msgstr "Conferme"
 
-#: views/dashboard.php:95
+#: views/dashboard.php:96
 msgid "Per operator"
 msgstr "Per operatore"
 
 # ---- v2.0: grid JS labels + placeholders ----
-#: views/dashboard.php:113 views/grid.php:7 views/history.php:53
+#: views/dashboard.php:114 views/grid.php:7 views/history.php:54
 msgid "ARMED"
 msgstr "ARMATO"
 
-#: views/dashboard.php:114 views/grid.php:8 views/history.php:54
+#: views/dashboard.php:115 views/flow.php:31 views/grid.php:8
+#: views/history.php:55
 msgid "ALARM"
 msgstr "ALLARME"
 
-#: views/dashboard.php:115 views/grid.php:9 views/history.php:55
+#: views/dashboard.php:116 views/grid.php:9 views/history.php:56
 msgid "TAKEN CHARGE"
 msgstr "PRESA IN CARICO"
 
-#: views/dashboard.php:116
+#: views/dashboard.php:117
 msgid "No active sessions."
 msgstr "Nessuna sessione attiva."
 
-#: views/dashboard.php:117
+#: views/dashboard.php:118
 msgid "Nothing queued — speakers idle."
 msgstr "Niente in coda — altoparlanti liberi."
 
-#: views/dashboard.php:118
+#: views/dashboard.php:119
 msgid "now playing / next:"
 msgstr "in riproduzione / prossimi:"
 
-#: views/dashboard.php:119
+#: views/dashboard.php:120
 #, php-format
 msgid "%s left"
 msgstr "%s rimanenti"
 
-#: views/dashboard.php:120
+#: views/dashboard.php:121
 #, php-format
 msgid "%s ago"
 msgstr "%s fa"
 
-#: views/dashboard.php:121
+#: views/dashboard.php:122
 msgid "updated"
 msgstr "aggiornato"
 
-#: views/dashboard.php:122
+#: views/dashboard.php:123
 msgid "LIVE"
 msgstr "LIVE"
 
-#: views/dashboard.php:123
+#: views/dashboard.php:124
 msgid "AMI OK"
 msgstr "AMI OK"
 
-#: views/dashboard.php:124
+#: views/dashboard.php:125
 msgid "AMI DOWN"
 msgstr "AMI NON RAGGIUNGIBILE"
 
-#: views/dashboard.php:125 views/settings.php:101
+#: views/dashboard.php:126 views/settings.php:102
 msgid "Ready for alarms"
 msgstr "Pronto per gli allarmi"
 
-#: views/dashboard.php:126
+#: views/dashboard.php:127
 #, php-format
 msgid "%d problem(s), %d warning(s)"
 msgstr "%d problema/i, %d avviso/i"
 
-#: views/dashboard.php:127
+#: views/dashboard.php:128
 msgid "Total"
 msgstr "Totale"
 
-#: views/dashboard.php:129
+#: views/dashboard.php:130
 msgid "—"
 msgstr "—"
 
-#: views/events.php:27 views/grid.php:36 views/history.php:30
+#: views/events.php:28 views/grid.php:37 views/history.php:31
 msgid "Refresh"
 msgstr "Aggiorna"
 
-#: views/events.php:32
+#: views/events.php:33
 msgid "Time"
 msgstr "Ora"
 
-#: views/events.php:33
+#: views/events.php:34
 msgid "Event"
 msgstr "Evento"
 
-#: views/events.php:36
+#: views/events.php:37
 msgid "Details"
 msgstr "Dettagli"
 
-#: views/events.php:61
+#: views/events.php:62
 msgid "No events yet."
 msgstr "Nessun evento ancora."
+
+#: views/flow.php:23
+msgid "What happens on an alarm, based on the current configuration — so you can see in advance where the calls will go. Update it by changing the Settings."
+msgstr "Cosa succede in caso di allarme, in base alla configurazione attuale — così vedi in anticipo dove andranno le chiamate. Si aggiorna modificando le Impostazioni."
+
+#: views/flow.php:28
+msgid "Operator arms"
+msgstr "L'operatore arma"
+
+#: views/flow.php:28
+#, php-format
+msgid "dials %s from their extension"
+msgstr "compone %s dal proprio interno"
+
+#: views/flow.php:29
+#, php-format
+msgid "no check-in (%s) within %d min"
+msgstr "nessuna conferma (%s) entro %d min"
+
+#: views/flow.php:35
+#, php-format
+msgid "Announcement on the speakers (paging group %s)"
+msgstr "Annuncio sugli altoparlanti (paging group %s)"
+
+#: views/flow.php:37
+msgid "No paging group set — no speaker announcement"
+msgstr "Nessun paging group impostato — nessun annuncio sugli altoparlanti"
+
+#: views/flow.php:42
+#, php-format
+msgid "Responders called ONE AT A TIME, in order (ring %ds each)"
+msgstr "Soccorritori chiamati UNO ALLA VOLTA, in ordine (squillo %ds ciascuno)"
+
+#: views/flow.php:43
+#, php-format
+msgid "ALL responders called at the same time (ring %ds)"
+msgstr "TUTTI i soccorritori chiamati contemporaneamente (squillo %ds)"
+
+#: views/flow.php:48
+msgid "No responders configured — nobody is called!"
+msgstr "Nessun soccorritore configurato — non viene chiamato nessuno!"
+
+#: views/flow.php:54
+msgid "internal"
+msgstr "interno"
+
+#: views/flow.php:57
+msgid "no outbound route!"
+msgstr "nessuna outbound route!"
+
+#: views/flow.php:58
+msgid "route filtered by Caller ID"
+msgstr "route filtrata per Caller ID"
+
+#: views/flow.php:59
+#, php-format
+msgid "route \"%s\" — trunk disabled"
+msgstr "route \"%s\" — trunk disabilitato"
+
+#: views/flow.php:60
+#, php-format
+msgid "via route \"%s\""
+msgstr "tramite route \"%s\""
+
+#: views/flow.php:61
+msgid "external"
+msgstr "esterno"
+
+#: views/flow.php:63
+#, php-format
+msgid "step %d"
+msgstr "passo %d"
+
+#: views/flow.php:68
+msgid "the down worker's extension (may be rejected)"
+msgstr "l'interno dell'operatore caduto (potrebbe essere rifiutato)"
+
+#: views/flow.php:69
+#, php-format
+msgid "External calls present Caller ID: %s"
+msgstr "Le chiamate esterne presentano il Caller ID: %s"
+
+#: views/flow.php:74
+#, php-format
+msgid "First to press %s (within %ds) takes charge → all other calls stop"
+msgstr "Il primo che preme %s (entro %ds) prende in carico → tutte le altre chiamate si fermano"
+
+#: views/flow.php:78
+msgid "Session kept as \"taken charge\" until an operator disarms"
+msgstr "La sessione resta \"presa in carico\" finché un operatore non disarma"
+
+#: views/flow.php:78
+msgid "Session closed (incident over)"
+msgstr "Sessione chiusa (emergenza conclusa)"
+
+#: views/flow.php:79
+msgid "\"taken charge\" announced on the speakers"
+msgstr "\"preso in carico\" annunciato sugli altoparlanti"
+
+#: views/flow.php:85
+#, php-format
+msgid "If nobody takes charge, the whole alarm (announcement + calls) repeats every %d seconds until someone presses %s or an operator disarms (%s). Multiple operators can be in alarm at once, each escalating independently."
+msgstr "Se nessuno prende in carico, l'intero allarme (annuncio + chiamate) si ripete ogni %d secondi finché qualcuno non preme %s o un operatore disarma (%s). Più operatori possono essere in allarme contemporaneamente, ciascuno in modo indipendente."
+
+#: views/flow.php:108
+msgid "Diagram source (Mermaid) — for export"
+msgstr "Sorgente diagramma (Mermaid) — per export"
 
 #: views/grid.php:10
 msgid "Disarm"
@@ -498,23 +616,23 @@ msgstr "Apri il check di prontezza"
 msgid "Readiness: ready for alarms."
 msgstr "Prontezza: pronto per gli allarmi."
 
-#: views/grid.php:46
+#: views/grid.php:47
 msgid "Armed at"
 msgstr "Armato il"
 
-#: views/grid.php:47
+#: views/grid.php:48
 msgid "Next reminder"
 msgstr "Prossimo promemoria"
 
-#: views/grid.php:48
+#: views/grid.php:49
 msgid "Deadline"
 msgstr "Scadenza"
 
-#: views/grid.php:49
+#: views/grid.php:50
 msgid "Actions"
 msgstr "Azioni"
 
-#: views/grid.php:54
+#: views/grid.php:55
 msgid "This page auto-refreshes every 15 seconds. Monitoring is driven by the \"loneworker tick\" job (runs every minute)."
 msgstr "Questa pagina si aggiorna automaticamente ogni 15 secondi. Il monitoraggio è gestito dal job \"loneworker tick\" (eseguito ogni minuto)."
 
@@ -522,100 +640,100 @@ msgstr "Questa pagina si aggiorna automaticamente ogni 15 secondi. Il monitoragg
 msgid "Responder answered"
 msgstr "Soccorritore ha risposto"
 
-#: views/history.php:21
+#: views/history.php:22
 msgid "Sessions (active &amp; past)"
 msgstr "Sessioni (attive e passate)"
 
-#: views/history.php:23
+#: views/history.php:24
 msgid "Filter by extension / name"
 msgstr "Filtra per interno / nome"
 
-#: views/history.php:28
+#: views/history.php:29
 msgid "All"
 msgstr "Tutto"
 
-#: views/history.php:37
+#: views/history.php:38
 msgid "Started"
 msgstr "Iniziata"
 
-#: views/history.php:38
+#: views/history.php:39
 msgid "Ended"
 msgstr "Terminata"
 
-#: views/history.php:39
+#: views/history.php:40
 msgid "Duration"
 msgstr "Durata"
 
-#: views/history.php:40
+#: views/history.php:41
 msgid "Summary"
 msgstr "Riepilogo"
 
-#: views/history.php:52
+#: views/history.php:53
 msgid "ACTIVE"
 msgstr "ATTIVA"
 
-#: views/history.php:56
+#: views/history.php:57
 msgid "No sessions in this period."
 msgstr "Nessuna sessione in questo periodo."
 
-#: views/history.php:57
+#: views/history.php:58
 #, php-format
 msgid "%d check-in(s)"
 msgstr "%d conferma/e"
 
-#: views/history.php:58
+#: views/history.php:59
 #, php-format
 msgid "%d alarm(s)"
 msgstr "%d allarme/i"
 
-#: views/history.php:59
+#: views/history.php:60
 #, php-format
 msgid "%d reminder(s)"
 msgstr "%d promemoria"
 
-#: views/history.php:60
+#: views/history.php:61
 #, php-format
 msgid "%d re-call(s)"
 msgstr "%d richiamo/i"
 
-#: views/history.php:61
+#: views/history.php:62
 msgid "taken charge"
 msgstr "presa in carico"
 
-#: views/history.php:62
+#: views/history.php:63
 #, php-format
 msgid "taken charge by %s"
 msgstr "presa in carico da %s"
 
-#: views/history.php:63
+#: views/history.php:64
 msgid "by"
 msgstr "da"
 
-#: views/history.php:64
+#: views/history.php:65
 msgid "called"
 msgstr "chiamati"
 
-#: views/history.php:65
+#: views/history.php:66
 msgid "disarmed manually"
 msgstr "disarmata manualmente"
 
-#: views/history.php:66
+#: views/history.php:67
 msgid "closed after take-charge"
 msgstr "chiusa dopo presa in carico"
 
-#: views/history.php:67
+#: views/history.php:68
 msgid "ongoing"
 msgstr "in corso"
 
-#: views/history.php:68
+#: views/history.php:69
 msgid "Timeline"
 msgstr "Cronologia"
 
-#: views/history.php:69
+#: views/history.php:70
 msgid "Session ID"
 msgstr "ID sessione"
 
-#: views/history.php:70
+#: views/history.php:71
 msgid "No recorded actions."
 msgstr "Nessuna azione registrata."
 
@@ -681,609 +799,609 @@ msgstr "⚠ Nessun soccorritore configurato: la cascata d'emergenza non funzione
 msgid "Preview extension (used only for this example, not saved)"
 msgstr "Interno di esempio (usato solo per questa anteprima, non salvato)"
 
-#: views/settings.php:101
+#: views/settings.php:102
 msgid "Problems to fix before alarms work reliably"
 msgstr "Problemi da risolvere prima che gli allarmi funzionino in modo affidabile"
 
-#: views/settings.php:101
+#: views/settings.php:102
 msgid "Ready, with warnings"
 msgstr "Pronto, con avvisi"
 
-#: views/settings.php:106
+#: views/settings.php:107
 msgid "Readiness check"
 msgstr "Check di prontezza"
 
-#: views/settings.php:107
+#: views/settings.php:108
 msgid "Re-check"
 msgstr "Ricontrolla"
 
 # ---- v1.9: "How it works" guide ----
-#: views/settings.php:123
+#: views/settings.php:124
 msgid "How it works"
 msgstr "Come funziona"
 
-#: views/settings.php:124 views/settings.php:210
+#: views/settings.php:125 views/settings.php:211
 msgid "Timers"
 msgstr "Tempi"
 
 # ---- v1.8: settings tabs ----
-#: views/settings.php:125
+#: views/settings.php:126
 msgid "Feature codes"
 msgstr "Feature code"
 
-#: views/settings.php:126
+#: views/settings.php:127
 msgid "Responders & calls"
 msgstr "Soccorritori e chiamate"
 
-#: views/settings.php:127
+#: views/settings.php:128
 msgid "Limits"
 msgstr "Limiti"
 
-#: views/settings.php:128
+#: views/settings.php:129
 msgid "Announcements"
 msgstr "Annunci"
 
-#: views/settings.php:137
+#: views/settings.php:138
 msgid "(not set)"
 msgstr "(non impostato)"
 
-#: views/settings.php:139
+#: views/settings.php:140
 msgid "one at a time, in list order"
 msgstr "uno alla volta, nell'ordine della lista"
 
-#: views/settings.php:139
+#: views/settings.php:140
 msgid "all at the same time"
 msgstr "tutti contemporaneamente"
 
-#: views/settings.php:145
+#: views/settings.php:146
 msgid "How the Lone Worker system works for everyone involved: the operator working alone, the people near the speakers, and the responders called in an emergency. The numbers below reflect your current settings."
 msgstr "Come funziona il sistema Uomo a Terra per tutti i soggetti coinvolti: l'operatore che lavora da solo, le persone vicino alle casse e i soccorritori chiamati in emergenza. I numeri qui sotto riflettono le impostazioni attuali."
 
-#: views/settings.php:147
+#: views/settings.php:148
 msgid "1) What the operator does — feature codes"
 msgstr "1) Cosa fa l'operatore — feature code"
 
-#: views/settings.php:150
+#: views/settings.php:151
 msgid "Dial"
 msgstr "Comporre"
 
-#: views/settings.php:151
+#: views/settings.php:152
 msgid "What it means"
 msgstr "Cosa significa"
 
-#: views/settings.php:152
+#: views/settings.php:153
 msgid "The operator hears (own phone)"
 msgstr "L'operatore sente (sul proprio telefono)"
 
-#: views/settings.php:153
+#: views/settings.php:154
 msgid "The speakers announce (everyone nearby hears)"
 msgstr "Le casse annunciano (lo sentono tutti nei paraggi)"
 
-#: views/settings.php:158
+#: views/settings.php:159
 #, php-format
 msgid "Arm: \"I am starting to work alone.\" A %d-minute countdown begins."
 msgstr "Arma: \"Inizio a lavorare da solo.\" Parte un conto alla rovescia di %d minuti."
 
-#: views/settings.php:159 views/settings.php:165 views/settings.php:171
+#: views/settings.php:160 views/settings.php:166 views/settings.php:172
 msgid "A short confirmation beep."
 msgstr "Un breve bip di conferma."
 
-#: views/settings.php:160
+#: views/settings.php:161
 #, php-format
 msgid "\"Attention. Lone worker system armed for extension N. Confirm within %1$d minutes by calling %2$s.\""
 msgstr "\"Attenzione. Sistema uomo a terra attivato per l'interno N. Confermare entro %1$d minuti chiamando %2$s.\""
 
-#: views/settings.php:164
+#: views/settings.php:165
 msgid "Check-in: \"I am OK.\" Resets the countdown."
 msgstr "Conferma: \"Sto bene.\" Azzera il conto alla rovescia."
 
-#: views/settings.php:166
+#: views/settings.php:167
 msgid "\"Lone worker: extension N has confirmed presence. The system stays active.\""
 msgstr "\"Uomo a terra: l'interno N ha confermato la presenza. Il sistema rimane attivo.\""
 
-#: views/settings.php:170
+#: views/settings.php:171
 msgid "Disarm: \"I have finished.\" Monitoring stops."
 msgstr "Disarma: \"Ho finito.\" Il monitoraggio si ferma."
 
-#: views/settings.php:172
+#: views/settings.php:173
 msgid "\"Lone worker system disarmed for extension N.\""
 msgstr "\"Sistema uomo a terra disattivato per l'interno N.\""
 
-#: views/settings.php:176
+#: views/settings.php:177
 msgid "The acting extension is taken automatically from the phone's Caller ID, so each operator can only arm, confirm or disarm their OWN session. If the code cannot be applied (e.g. already armed, or not authorised) the phone plays an error tone instead of a beep."
 msgstr "L'interno che agisce è preso automaticamente dal Caller ID del telefono, quindi ogni operatore può armare, confermare o disarmare solo la PROPRIA sessione. Se il codice non può essere applicato (es. già armato, o non autorizzato) il telefono riproduce un tono di errore invece del bip."
 
-#: views/settings.php:178
+#: views/settings.php:179
 msgid "2) While armed — reminders"
 msgstr "2) Mentre è armato — promemoria"
 
-#: views/settings.php:180
+#: views/settings.php:181
 #, php-format
 msgid "After arming, the operator has %1$d minutes to check in by dialing %2$s."
 msgstr "Dopo l'armamento, l'operatore ha %1$d minuti per confermare componendo %2$s."
 
-#: views/settings.php:181
+#: views/settings.php:182
 #, php-format
 msgid "After %1$d minutes a reminder is announced on the speakers, then repeated every %2$d minutes until the deadline."
 msgstr "Dopo %1$d minuti viene annunciato un promemoria sulle casse, poi ripetuto ogni %2$d minuti fino alla scadenza."
 
-#: views/settings.php:182
+#: views/settings.php:183
 #, php-format
 msgid "Dialing %1$s at any time resets the countdown back to %2$d minutes (\"I am still OK\")."
 msgstr "Componendo %1$s in qualsiasi momento il conto alla rovescia torna a %2$d minuti (\"sto ancora bene\")."
 
-#: views/settings.php:183
+#: views/settings.php:184
 #, php-format
 msgid "Dialing %s stops the monitoring for that operator."
 msgstr "Componendo %s il monitoraggio per quell'operatore si ferma."
 
-#: views/settings.php:186
+#: views/settings.php:187
 msgid "3) If the operator does not confirm — the alarm"
 msgstr "3) Se l'operatore non conferma — l'allarme"
 
-#: views/settings.php:188
+#: views/settings.php:189
 msgid "When the countdown reaches zero, the speakers announce: \"Extension N did not confirm — check the operator immediately.\""
 msgstr "Quando il conto alla rovescia arriva a zero, le casse annunciano: \"L'interno N non ha confermato — verificare immediatamente l'operatore.\""
 
-#: views/settings.php:189
+#: views/settings.php:190
 #, php-format
 msgid "The configured responders are then called %1$s (%2$d configured)."
 msgstr "I soccorritori configurati vengono quindi chiamati %1$s (%2$d configurati)."
 
-#: views/settings.php:190
+#: views/settings.php:191
 #, php-format
 msgid "Whoever answers hears: \"Lone worker alarm, the operator of extension N did not confirm — press %1$s to take charge.\" They have %2$d seconds to press %1$s (the prompt repeats up to 3 times). Pressing %1$s takes charge: every other call stops immediately."
 msgstr "Chi risponde sente: \"Allarme uomo a terra, l'operatore dell'interno N non ha confermato — premi %1$s per prendere in carico.\" Ha %2$d secondi per premere %1$s (il messaggio si ripete fino a 3 volte). Premendo %1$s prende in carico: ogni altra chiamata si interrompe immediatamente."
 
-#: views/settings.php:192
+#: views/settings.php:193
 msgid "Once taken charge of, the session is kept as \"TAKEN CHARGE\" (no more calls or announcements) until an operator disarms it manually."
 msgstr "Una volta presa in carico, la sessione resta come \"PRESA IN CARICO\" (nessun'altra chiamata o annuncio) finché un operatore non la disarma manualmente."
 
-#: views/settings.php:193
+#: views/settings.php:194
 msgid "Once taken charge of, the session is closed (incident over)."
 msgstr "Una volta presa in carico, la sessione viene chiusa (emergenza conclusa)."
 
-#: views/settings.php:195
+#: views/settings.php:196
 msgid "The speakers announce that the alarm was taken charge of."
 msgstr "Le casse annunciano che l'allarme è stato preso in carico."
 
-#: views/settings.php:196
+#: views/settings.php:197
 msgid "No announcement is played on the speakers."
 msgstr "Nessun annuncio viene riprodotto sulle casse."
 
-#: views/settings.php:197
+#: views/settings.php:198
 #, php-format
 msgid "If nobody presses %1$s, the alarm keeps re-announcing on the speakers and re-calling the responders every %2$d minutes, until someone takes charge or an operator disarms."
 msgstr "Se nessuno preme %1$s, l'allarme continua a essere riannunciato sulle casse e i soccorritori vengono richiamati ogni %2$d minuti, finché qualcuno non prende in carico o un operatore disarma."
 
-#: views/settings.php:200
+#: views/settings.php:201
 msgid "Who hears what, from where"
 msgstr "Chi sente cosa, da dove"
 
-#: views/settings.php:201
+#: views/settings.php:202
 #, php-format
 msgid "Speakers — paging group %s"
 msgstr "Casse — gruppo paging %s"
 
-#: views/settings.php:202
+#: views/settings.php:203
 msgid "Every announcement: armed, reminder, confirmed, alarm, taken charge, disarmed. Heard by everyone near the speakers."
 msgstr "Ogni annuncio: armato, promemoria, confermato, allarme, preso in carico, disarmato. Lo sentono tutti vicino alle casse."
 
-#: views/settings.php:203
+#: views/settings.php:204
 msgid "The operator's own phone (cordless)"
 msgstr "Il telefono dell'operatore (cordless)"
 
-#: views/settings.php:204
+#: views/settings.php:205
 #, php-format
 msgid "Only a short confirmation beep when dialing %1$s / %2$s / %3$s. No spoken message."
 msgstr "Solo un breve bip di conferma componendo %1$s / %2$s / %3$s. Nessun messaggio vocale."
 
-#: views/settings.php:205
+#: views/settings.php:206
 msgid "The responders' phones (internal extensions and external numbers)"
 msgstr "I telefoni dei soccorritori (interni e numeri esterni)"
 
-#: views/settings.php:206
+#: views/settings.php:207
 #, php-format
 msgid "Only during an alarm: the emergency call asking to press %s to take charge. Only the person who answers each call hears it."
 msgstr "Solo durante un allarme: la chiamata d'emergenza che chiede di premere %s per prendere in carico. La sente solo chi risponde a ciascuna chiamata."
 
-#: views/settings.php:212
+#: views/settings.php:213
 msgid "Timeout before alarm (seconds)"
 msgstr "Timeout prima dell'allarme (secondi)"
 
-#: views/settings.php:212
+#: views/settings.php:213
 msgid "How long an armed operator has to confirm before the alarm fires. Resets on every check-in (702). Default 1800 = 30 minutes."
 msgstr "Quanto tempo ha l'operatore armato per confermare prima che scatti l'allarme. Si azzera a ogni conferma (702). Predefinito 1800 = 30 minuti."
 
-#: views/settings.php:213
+#: views/settings.php:214
 msgid "First reminder after (seconds)"
 msgstr "Primo promemoria dopo (secondi)"
 
-#: views/settings.php:213
+#: views/settings.php:214
 msgid "Time from arm/check-in to the first reminder on the speakers. Default 900 = 15 minutes. Must be smaller than the timeout."
 msgstr "Tempo dall'armamento/conferma al primo promemoria sulle casse. Predefinito 900 = 15 minuti. Deve essere inferiore al timeout."
 
-#: views/settings.php:214
+#: views/settings.php:215
 msgid "Reminder interval (seconds)"
 msgstr "Intervallo tra i promemoria (secondi)"
 
-#: views/settings.php:214
+#: views/settings.php:215
 msgid "How often the reminder repeats after the first one, until the deadline. Default 300 = 5 minutes."
 msgstr "Ogni quanto si ripete il promemoria dopo il primo, fino alla scadenza. Predefinito 300 = 5 minuti."
 
 # ---- feature codes (editable) ----
-#: views/settings.php:219
+#: views/settings.php:220
 msgid "Feature codes (numbers to dial)"
 msgstr "Feature code (numeri da comporre)"
 
-#: views/settings.php:222
+#: views/settings.php:223
 msgid "Number the operator dials to arm a session (default 701)."
 msgstr "Numero che l'operatore compone per armare una sessione (predefinito 701)."
 
-#: views/settings.php:223
+#: views/settings.php:224
 msgid "Number the operator dials to confirm presence (default 702). This number is announced dynamically inside the \"armed\" and \"reminder\" messages, so if you change it the audio follows automatically."
 msgstr "Numero che l'operatore compone per confermare la presenza (predefinito 702). Questo numero viene pronunciato dinamicamente negli annunci \"armato\" e \"promemoria\", quindi se lo cambi l'audio si adegua automaticamente."
 
-#: views/settings.php:224
+#: views/settings.php:225
 msgid "Number the operator dials to disarm their session (default 703)."
 msgstr "Numero che l'operatore compone per disarmare la propria sessione (predefinito 703)."
 
-#: views/settings.php:238
+#: views/settings.php:239
 msgid "Audio & call routing"
 msgstr "Audio e instradamento chiamate"
 
-#: views/settings.php:240
+#: views/settings.php:241
 msgid "Paging group (speakers)"
 msgstr "Gruppo paging (casse)"
 
-#: views/settings.php:243
+#: views/settings.php:244
 msgid "The paging/intercom group whose speakers play every announcement (armed, reminder, confirmed, alarm, acknowledged, disarmed). Create it under Applications → Paging and Intercom."
 msgstr "Il gruppo paging/intercom le cui casse riproducono tutti gli annunci (armato, promemoria, confermato, allarme, preso in carico, disarmato). Crealo in Applicazioni → Paging and Intercom."
 
 # ---- v1.6: unified ordered list + call mode ----
-#: views/settings.php:260
+#: views/settings.php:261
 msgid "Numbers to call (in order)"
 msgstr "Numeri da chiamare (in ordine)"
 
-#: views/settings.php:266
+#: views/settings.php:267
 msgid "Pick an extension…"
 msgstr "Scegli un interno…"
 
-#: views/settings.php:269
+#: views/settings.php:270
 msgid "Add to list"
 msgstr "Aggiungi alla lista"
 
-#: views/settings.php:278
+#: views/settings.php:279
 msgid "One number per line, in the order they should be tried — internal extensions and external numbers together. Use the picker to add an internal extension, or just type a number. External numbers are dialed through your outbound routes (see the Readiness panel above)."
 msgstr "Un numero per riga, nell'ordine in cui vanno provati — interni e numeri esterni insieme. Usa il selettore per aggiungere un interno, o digita un numero. I numeri esterni vengono composti tramite le tue outbound route (vedi il pannello Prontezza qui sopra)."
 
-#: views/settings.php:282
+#: views/settings.php:283
 msgid "Call mode"
 msgstr "Modalità di chiamata"
 
-#: views/settings.php:285
+#: views/settings.php:286
 msgid "All at once (ring everyone together)"
 msgstr "Tutti insieme (squilla a tutti contemporaneamente)"
 
-#: views/settings.php:286
+#: views/settings.php:287
 msgid "In sequence (one at a time, in list order)"
 msgstr "In sequenza (uno alla volta, nell'ordine della lista)"
 
-#: views/settings.php:290
+#: views/settings.php:291
 #, php-format
 msgid "All at once: every number rings at the same time; the first to press %1$s takes charge and the others stop. In sequence: each number is tried for the ring time, one after another in list order, until someone presses %1$s."
 msgstr "Tutti insieme: ogni numero squilla contemporaneamente; il primo che preme %1$s prende in carico e gli altri si fermano. In sequenza: ogni numero viene provato per la durata dello squillo, uno dopo l'altro nell'ordine della lista, finché qualcuno non preme %1$s."
 
-#: views/settings.php:292
+#: views/settings.php:293
 msgid "Alarm ring time (seconds)"
 msgstr "Durata squillo allarme (secondi)"
 
-#: views/settings.php:292
+#: views/settings.php:293
 msgid "How long each responder rings during an alarm before giving up (per attempt). Default 45."
 msgstr "Per quanto tempo squilla ogni soccorritore durante un allarme prima di rinunciare (per tentativo). Predefinito 45."
 
 # ---- escalation / language / test / event history ----
-#: views/settings.php:293
+#: views/settings.php:294
 msgid "Repeat alarm every (seconds)"
 msgstr "Ripeti l'allarme ogni (secondi)"
 
-#: views/settings.php:293
+#: views/settings.php:294
 msgid "If nobody presses the confirm key, the alarm is re-announced and the responders are called again every this many seconds, until someone takes charge or an operator disarms. Keep it larger than the ring time. Default 120 (2 min)."
 msgstr "Se nessuno preme il tasto di conferma, l'allarme viene riannunciato e i soccorritori richiamati ogni questo numero di secondi, finché qualcuno non prende in carico o un operatore disarma. Tienilo maggiore della durata squillo. Default 120 (2 min)."
 
-#: views/settings.php:296
+#: views/settings.php:297
 msgid "Responder confirmation"
 msgstr "Conferma del soccorritore"
 
-#: views/settings.php:298
+#: views/settings.php:299
 msgid "Key to take charge"
 msgstr "Tasto per prendere in carico"
 
-#: views/settings.php:307
+#: views/settings.php:308
 msgid "The DTMF key a responder presses on their phone to take charge of the alarm (which stops all the other calls). Default 1."
 msgstr "Il tasto DTMF che il soccorritore preme sul telefono per prendere in carico l'allarme (interrompendo tutte le altre chiamate). Default 1."
 
-#: views/settings.php:309
+#: views/settings.php:310
 msgid "Confirmation timeout (seconds)"
 msgstr "Timeout di conferma (secondi)"
 
-#: views/settings.php:309
+#: views/settings.php:310
 msgid "How long a responder has to press the key after each prompt. The prompt is repeated up to 3 times. Default 15."
 msgstr "Quanti secondi ha il soccorritore per premere il tasto dopo ogni messaggio. Il messaggio viene ripetuto fino a 3 volte. Default 15."
 
-#: views/settings.php:312
+#: views/settings.php:313
 msgid "After the alarm is confirmed"
 msgstr "Dopo la conferma dell'allarme"
 
-#: views/settings.php:315
+#: views/settings.php:316
 msgid "Close the session (incident over)"
 msgstr "Chiudi la sessione (emergenza conclusa)"
 
-#: views/settings.php:316
+#: views/settings.php:317
 msgid "Keep it as \"taken charge\" until an operator disarms"
 msgstr "Mantienila come \"presa in carico\" finché un operatore non disarma"
 
-#: views/settings.php:320
+#: views/settings.php:321
 msgid "What happens once a responder takes charge. Close the session: it ends and no more calls or announcements are made. Keep as taken charge: the calls and re-announcements stop, but the session stays visible (state \"TAKEN CHARGE\") until someone disarms it manually — useful to keep a record that it is being handled."
 msgstr "Cosa succede quando un soccorritore prende in carico. Chiudi la sessione: termina e non vengono più effettuate chiamate o annunci. Mantieni come presa in carico: le chiamate e i ri-annunci si fermano, ma la sessione resta visibile (stato \"PRESA IN CARICO\") finché qualcuno non la disarma manualmente — utile per tenere traccia che è in gestione."
 
-#: views/settings.php:323
+#: views/settings.php:324
 msgid "Announce \"taken charge\" on the speakers"
 msgstr "Annuncia \"preso in carico\" sulle casse"
 
-#: views/settings.php:326
+#: views/settings.php:327
 msgid "Yes"
 msgstr "Sì"
 
-#: views/settings.php:327
+#: views/settings.php:328
 msgid "No"
 msgstr "No"
 
-#: views/settings.php:331
+#: views/settings.php:332
 msgid "When a responder takes charge, play the \"alarm taken charge of\" announcement on the speakers (paging group) so everyone on site knows it is being handled."
 msgstr "Quando un soccorritore prende in carico, riproduci sulle casse (paging group) l'annuncio \"allarme preso in carico\" così tutti in sede sanno che è in gestione."
 
-#: views/settings.php:335
+#: views/settings.php:336
 msgid "Spoken number language"
 msgstr "Lingua dei numeri pronunciati"
 
-#: views/settings.php:343
+#: views/settings.php:344
 msgid "Language used to speak the extension and the check-in number (SayDigits). Set it to match your recordings (default Italian), otherwise the numbers are spoken in the system default language."
 msgstr "Lingua usata per pronunciare l'interno e il numero di conferma (SayDigits). Impostala in base alle tue registrazioni (predefinito italiano), altrimenti i numeri vengono detti nella lingua di default del sistema."
 
-#: views/settings.php:345
+#: views/settings.php:346
 msgid "Alarm calls Caller ID (for external numbers)"
 msgstr "Caller ID delle chiamate d'allarme (per i numeri esterni)"
 
-#: views/settings.php:347
+#: views/settings.php:348
 msgid "Service extension for alarm calls"
 msgstr "Interno di servizio per le chiamate d'allarme"
 
-#: views/settings.php:350
+#: views/settings.php:351
 msgid "(the down worker's own extension)"
 msgstr "(l'interno dell'operatore caduto)"
 
-#: views/settings.php:357
+#: views/settings.php:358
 msgid "External alarm calls go out with this extension's identity — they inherit its Outbound CID and pass its CID-filtered outbound routes. Leave on default to call out as the down worker's extension."
 msgstr "Le chiamate d'allarme esterne escono con l'identità di questo interno — ne ereditano l'Outbound CID e superano le sue outbound route con filtro CID. Lascia il default per chiamare con l'interno dell'operatore caduto."
 
-#: views/settings.php:360
+#: views/settings.php:361
 msgid "Explicit outbound Caller ID"
 msgstr "CallerID esplicito in uscita"
 
-#: views/settings.php:361
+#: views/settings.php:362
 msgid "e.g. 0119876543"
 msgstr "es. 0119876543"
 
-#: views/settings.php:363
+#: views/settings.php:364
 msgid "If set, this number is presented as Caller ID on external alarm calls and OVERRIDES the service extension. Use a number your carrier accepts and that your outbound routes do not filter out. The spoken announcement still says the down worker's extension."
 msgstr "Se impostato, questo numero viene presentato come Caller ID nelle chiamate d'allarme esterne e HA PRIORITÀ sull'interno di servizio. Usa un numero accettato dal tuo operatore e non filtrato dalle tue outbound route. L'annuncio vocale continua a dire l'interno dell'operatore caduto."
 
-#: views/settings.php:367
+#: views/settings.php:368
 msgid "Test announcement (speakers)"
 msgstr "Prova annuncio (casse)"
 
-#: views/settings.php:368
+#: views/settings.php:369
 msgid "Test alarm call"
 msgstr "Prova chiamata d'allarme"
 
 # ---- v2.1: live test status + stop ----
-#: views/settings.php:369
+#: views/settings.php:370
 msgid "Stop test"
 msgstr "Ferma il test"
 
-#: views/settings.php:371
+#: views/settings.php:372
 msgid "Tests use the saved settings and a fake extension (000); they do not create a session. The status updates live and you can stop a running test."
 msgstr "Le prove usano le impostazioni salvate e un interno fittizio (000); non creano una sessione. Lo stato si aggiorna in tempo reale e puoi fermare un test in corso."
 
-#: views/settings.php:376
+#: views/settings.php:377
 msgid "Starting…"
 msgstr "Avvio…"
 
-#: views/settings.php:377
+#: views/settings.php:378
 #, php-format
 msgid "Test running — %d active call(s)."
 msgstr "Test in corso — %d chiamata/e attiva/e."
 
-#: views/settings.php:378
+#: views/settings.php:379
 msgid "Announcement playing on the speakers…"
 msgstr "Annuncio in riproduzione sulle casse…"
 
-#: views/settings.php:379
+#: views/settings.php:380
 msgid "Playing on the speakers…"
 msgstr "Riproduzione sugli altoparlanti…"
 
-#: views/settings.php:380
+#: views/settings.php:381
 msgid "Test ended."
 msgstr "Test terminato."
 
-#: views/settings.php:381
+#: views/settings.php:382
 #, php-format
 msgid "Test stopped (%d call(s) hung up)."
 msgstr "Test fermato (%d chiamata/e terminata/e)."
 
-#: views/settings.php:382
+#: views/settings.php:383
 msgid "Could not start the test — check the Readiness panel above (paging group / responders / AMI)."
 msgstr "Impossibile avviare il test — controlla il pannello Prontezza qui sopra (gruppo paging / soccorritori / AMI)."
 
-#: views/settings.php:383
+#: views/settings.php:384
 msgid "Place a test alarm call to the responders now?"
 msgstr "Avviare ora una chiamata d'allarme di prova ai soccorritori?"
 
-#: views/settings.php:384
+#: views/settings.php:385
 msgid "ringing"
 msgstr "in squillo"
 
-#: views/settings.php:385
+#: views/settings.php:386
 msgid "answered"
 msgstr "ha risposto"
 
-#: views/settings.php:386
+#: views/settings.php:387
 msgid "in progress"
 msgstr "in corso"
 
-#: views/settings.php:392
+#: views/settings.php:393
 msgid "Limits & authorisation"
 msgstr "Limiti e autorizzazioni"
 
-#: views/settings.php:394
+#: views/settings.php:395
 msgid "Authorised extensions"
 msgstr "Interni autorizzati"
 
-#: views/settings.php:395
+#: views/settings.php:396
 msgid "e.g. 301 302 121"
 msgstr "es. 301 302 121"
 
-#: views/settings.php:397
+#: views/settings.php:398
 msgid "Space- or comma-separated list of extensions allowed to use 701/702/703. Leave empty to allow every extension. The acting extension is taken from the phone's Caller ID, so each operator can only control their own session."
 msgstr "Elenco di interni (separati da spazi o virgole) abilitati a usare 701/702/703. Lascia vuoto per autorizzare tutti gli interni. L'interno che agisce è preso dal Caller ID del telefono, così ogni operatore può gestire solo la propria sessione."
 
-#: views/settings.php:399
+#: views/settings.php:400
 msgid "Max concurrent sessions"
 msgstr "Sessioni contemporanee max"
 
-#: views/settings.php:399
+#: views/settings.php:400
 msgid "Safety cap on how many operators can be armed at the same time. Further arm attempts are rejected with an error tone."
 msgstr "Limite di sicurezza sul numero di operatori armati contemporaneamente. Ulteriori tentativi di armamento vengono rifiutati con un tono di errore."
 
-#: views/settings.php:400
+#: views/settings.php:401
 msgid "Event retention (days)"
 msgstr "Conservazione eventi (giorni)"
 
-#: views/settings.php:400
+#: views/settings.php:401
 msgid "Audit events (arm, check-in, alarm, acknowledge, etc.) older than this are deleted automatically. 0 = keep forever."
 msgstr "Gli eventi (arma, conferma, allarme, presa in carico, ecc.) più vecchi di questo valore vengono cancellati automaticamente. 0 = conserva per sempre."
 
-#: views/settings.php:405
+#: views/settings.php:406
 msgid "Announcements (built-in)"
 msgstr "Annunci (integrati)"
 
-#: views/settings.php:406
+#: views/settings.php:407
 msgid "The announcement audio is built into the module (Italian) and is not editable: the clips ship pre-installed and are played automatically. Between the two parts of each message the system speaks the extension number digit by digit, e.g. \"...extension 3-0-1...\"."
 msgstr "L'audio degli annunci è integrato nel modulo (in italiano) e non è modificabile: le clip sono già installate e vengono riprodotte automaticamente. Tra le due parti di ogni messaggio il sistema pronuncia il numero dell'interno cifra per cifra, es. \"...interno 3-0-1...\"."
 
-#: views/settings.php:407
+#: views/settings.php:408
 msgid "Use the \"Play on speakers\" buttons below to preview each message live on the paging group (a sample extension number is spoken). You can stop playback at any time."
 msgstr "Usa i pulsanti \"Riproduci sugli altoparlanti\" qui sotto per ascoltare ogni messaggio dal vivo sul paging group (viene pronunciato un numero di interno di esempio). Puoi interrompere la riproduzione in qualsiasi momento."
 
-#: views/settings.php:409
+#: views/settings.php:410
 msgid "Stop playback"
 msgstr "Interrompi riproduzione"
 
 # ---- announcement cards (cross-referenced selectors + audience) ----
-#: views/settings.php:416
+#: views/settings.php:417
 msgid "Armed — played when an operator dials 701"
 msgstr "Armato — riprodotto quando un operatore compone 701"
 
-#: views/settings.php:417
+#: views/settings.php:418
 msgid "Attention. Lone worker system armed for extension"
 msgstr "Attenzione. Sistema uomo a terra attivato per l'interno"
 
-#: views/settings.php:418
+#: views/settings.php:419
 msgid "must confirm their presence by calling number"
 msgstr "deve confermare la presenza chiamando il numero"
 
-#: views/settings.php:419
+#: views/settings.php:420
 msgid "Confirmed — played when an operator dials 702"
 msgstr "Confermato — riprodotto quando un operatore compone 702"
 
-#: views/settings.php:420
+#: views/settings.php:421
 msgid "Lone worker: extension"
 msgstr "Uomo a terra: l'interno"
 
-#: views/settings.php:421
+#: views/settings.php:422
 msgid "has confirmed their presence. The system stays active."
 msgstr "ha confermato la propria presenza. Il sistema rimane attivo."
 
-#: views/settings.php:422
+#: views/settings.php:423
 msgid "Reminder — played before the deadline"
 msgstr "Promemoria — riprodotto prima della scadenza"
 
-#: views/settings.php:423
+#: views/settings.php:424
 msgid "Lone worker reminder. Extension"
 msgstr "Promemoria uomo a terra. L'interno"
 
-#: views/settings.php:424
+#: views/settings.php:425
 msgid "must confirm presence. Only a few minutes remain before the alarm. Call number"
 msgstr "deve confermare la propria presenza. Restano pochi minuti prima dell'allarme. Chiamare il numero"
 
-#: views/settings.php:425
+#: views/settings.php:426
 msgid "Alarm — played when the timeout expires"
 msgstr "Allarme — riprodotto allo scadere del timeout"
 
-#: views/settings.php:426
+#: views/settings.php:427
 msgid "Lone worker alarm. Extension"
 msgstr "Allarme uomo a terra. L'interno"
 
-#: views/settings.php:427
+#: views/settings.php:428
 msgid "did not confirm. Check the operator immediately. Emergency calls have been started."
 msgstr "non ha confermato la propria presenza. Verificare immediatamente le condizioni dell'operatore. Sono state attivate le chiamate d'emergenza."
 
-#: views/settings.php:428
+#: views/settings.php:429
 msgid "Acknowledged — played when a responder takes charge"
 msgstr "Preso in carico — riprodotto quando un soccorritore prende in carico"
 
-#: views/settings.php:429
+#: views/settings.php:430
 msgid "Lone worker alarm taken charge of for extension"
 msgstr "Allarme uomo a terra preso in carico per l'interno"
 
-#: views/settings.php:430
+#: views/settings.php:431
 msgid "A responder is checking the situation on site."
 msgstr "Un soccorritore sta verificando la situazione sul posto."
 
-#: views/settings.php:431
+#: views/settings.php:432
 msgid "Disarmed — played when an operator dials 703"
 msgstr "Disarmato — riprodotto quando un operatore compone 703"
 
-#: views/settings.php:432
+#: views/settings.php:433
 msgid "Lone worker system disarmed for extension"
 msgstr "Sistema uomo a terra disattivato per l'interno"
 
-#: views/settings.php:434
+#: views/settings.php:435
 msgid "Emergency call — played to the responders during the alarm"
 msgstr "Chiamata d'emergenza — riprodotto ai soccorritori durante l'allarme"
 
-#: views/settings.php:435
+#: views/settings.php:436
 msgid "Lone worker alarm. The operator of extension"
 msgstr "Allarme uomo a terra. L'operatore dell'interno"
 
-#: views/settings.php:436
+#: views/settings.php:437
 msgid "did not confirm. To take charge of the alarm, press the key (the system speaks the configured key here)."
 msgstr "non ha confermato. Per prendere in carico l'allarme, premi il tasto (qui il sistema pronuncia il tasto configurato)."
 
-#: views/settings.php:442
+#: views/settings.php:443
 msgid "Heard on the responders' phones (the internal extensions and external numbers configured below) — only the person who answers the call hears this."
 msgstr "Si sente sui telefoni dei soccorritori (gli interni e i numeri esterni configurati qui sotto) — lo sente solo chi risponde alla chiamata."
 
-#: views/settings.php:445
+#: views/settings.php:446
 #, php-format
 msgid "Heard on the speakers (paging group %s) — everyone near the speakers hears this."
 msgstr "Si sente sulle casse (gruppo paging %s) — lo sentono tutti vicino alle casse."
 
-#: views/settings.php:460
+#: views/settings.php:461
 msgid "The check-in number is spoken automatically here (SayDigits), taken from the Check-in feature code above."
 msgstr "Il numero di conferma viene pronunciato automaticamente qui (SayDigits), preso dal feature code di conferma qui sopra."
 
-#: views/settings.php:462
+#: views/settings.php:463
 msgid "Play on speakers"
 msgstr "Riproduci sugli altoparlanti"
