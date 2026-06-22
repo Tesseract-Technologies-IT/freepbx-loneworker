@@ -2,11 +2,12 @@
 	<rawname>loneworker</rawname>
 	<repo>local</repo>
 	<name>Lone Worker</name>
-	<version>1.0.14</version>
+	<version>1.0.15</version>
 	<publisher>Tesseract Technologies</publisher>
 	<license>GPLv3+</license>
 	<licenselink>http://www.gnu.org/licenses/gpl-3.0.txt</licenselink>
 	<changelog>
+		*1.0.15* Test status now counts logical calls instead of raw channel legs: a Local channel has two halves and the alarm test uses an extra orchestration channel, so "Test announcement" showed 2 and "Test alarm call" showed 4 — now they show the real count (1 announcement, N responders).
 		*1.0.14* Simplify the Alarm flow diagram: cleaner top-down layout with a single loop-back (the repeat), no self-loops or crossing back-edges, clearer outcomes — much easier to read.
 		*1.0.13* The Alarm flow is now a complete branching flowchart (rendered with a bundled Mermaid, offline): it shows every path — check-in yes/no, reminders, timeout, responder answers yes/no, key pressed yes/no, nobody confirms (repeat), disarm — and every spoken message, generated from the current configuration; plus the concrete responders/routing and an exportable diagram source.
 		*1.0.12* Add an "Alarm flow" view: a diagram generated dynamically from the current configuration showing where an alarm goes — operator arm, timeout, speaker announcement, the responders in call order/mode, and for each external number the resolved outbound route/trunk and Caller ID, plus take-charge key and repeat behaviour. Includes an exportable Mermaid diagram source.

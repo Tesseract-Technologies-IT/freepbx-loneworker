@@ -949,10 +949,20 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		return $out;
 	}
 
-	/** Live status of a running test (for the GUI). */
+	/** Live status of a running test (for the GUI). Counts LOGICAL calls, not raw channel legs:
+	 *  a Local channel has two halves (;1/;2) and the alarm uses an extra orchestration channel
+	 *  (Local/start@app-loneworker-emer), so the raw leg count is misleading. */
 	public function testStatus() {
 		$ch = $this->testChannels();
-		return ['active' => !empty($ch), 'count' => count($ch), 'channels' => $ch];
+		$bases = [];
+		foreach ($ch as $c) {
+			$base = preg_replace('/;[12]$/', '', $c['name']);                 // merge the two Local halves
+			if (strpos($base, '@app-loneworker-emer') !== false) { continue; } // orchestration, not a real call
+			if (!isset($bases[$base])) { $bases[$base] = $c['state']; }
+		}
+		$channels = [];
+		foreach ($bases as $name => $state) { $channels[] = ['name' => $name, 'state' => $state]; }
+		return ['active' => !empty($ch), 'count' => count($channels), 'channels' => $channels];
 	}
 
 	/** Stop a running test: hang up all test-tagged channels. */
