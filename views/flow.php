@@ -11,50 +11,47 @@ $postLabel = $f['confirm_action'] === 'hold' ? _('Session kept as taken-charge u
 $L = [
 	'arm'      => sprintf(_('Operator arms (%s)'), $f['arm']),
 	'msgArmed' => _('Speakers: lone worker armed for extension N'),
-	'confirm'  => sprintf(_('Check-in (%s) within %d min?'), $f['checkin'], $f['timeout_min']),
-	'reminders' => _('reminders'),
-	'msgConfirmed' => _('Speakers: presence confirmed'),
+	'confirm'  => sprintf(_('Check-in (%1$s) within %2$d min? (periodic reminders meanwhile)'), $f['checkin'], $f['timeout_min']),
+	'msgConfirmed' => _('Speakers: presence confirmed — back to monitoring (timer reset)'),
 	'disarmLbl' => sprintf(_('Disarm (%s)'), $f['disarm']),
-	'msgDisarmed' => _('Speakers: system disarmed'),
+	'msgDisarmed' => _('Speakers: system disarmed — session closed'),
 	'alarm'    => _('ALARM'),
 	'msgAlarm' => _('Speakers: extension N did not confirm'),
 	'call'     => sprintf(_('Call responders (%s)'), $modeLabel),
-	'repeat'   => sprintf(_('nobody confirms: repeat every %ds'), $f['repeat']),
 	'answered' => _('A responder answers?'),
 	'prompt'   => sprintf(_('To the responder: press %s to take charge'), $f['confirm_key']),
-	'key'      => sprintf(_('Presses %s within %ds?'), $f['confirm_key'], $f['confirm_timeout']),
+	'key'      => sprintf(_('Presses %1$s within %2$ds?'), $f['confirm_key'], $f['confirm_timeout']),
 	'ack'      => _('Takes charge — all other calls stop'),
 	'msgAck'   => _('Speakers: alarm taken charge of'),
-	'post'     => $postLabel . ($f['confirm_announce'] ? '' : ''),
-	'yes' => _('yes'), 'no' => _('no'), 'timeout' => _('no: timeout'), 'hangup' => _('no / hang up'),
+	'post'     => $postLabel,
+	'repeatNode' => sprintf(_('Nobody takes charge — repeat announcement + calls every %ds'), $f['repeat']),
+	'yes' => _('yes'), 'timeout' => _('no: timed out'), 'no' => _('no answer'), 'hangup' => _('no'),
 ];
 // sanitise label text for Mermaid (inside double quotes): drop quotes/newlines
 $q = function ($s) { return str_replace(['"', "\n", "\r"], ['', ' ', ' '], (string) $s); };
+// Clean top-down layout: one main path, the only back-edge is the "repeat" loop.
 $mm  = "flowchart TD\n";
-$mm .= '  A["' . $q($L['arm']) . '"]:::act --> MA["📢 ' . $q($L['msgArmed']) . '"]:::msg' . "\n";
+$mm .= '  A["📟 ' . $q($L['arm']) . '"]:::act --> MA["📢 ' . $q($L['msgArmed']) . '"]:::msg' . "\n";
 $mm .= '  MA --> W{"' . $q($L['confirm']) . '"}:::dec' . "\n";
-$mm .= '  W -->|"📢 ' . $q($L['reminders']) . '"| W' . "\n";
-$mm .= '  W -->|"' . $q($L['yes']) . '"| MC["📢 ' . $q($L['msgConfirmed']) . '"]:::msg' . "\n";
-$mm .= '  MC --> A' . "\n";
-$mm .= '  W -->|"' . $q($L['disarmLbl']) . '"| DZ' . "\n";
+$mm .= '  W -->|"' . $q($L['yes']) . '"| MC["📢 ' . $q($L['msgConfirmed']) . '"]:::done' . "\n";
+$mm .= '  W -->|"' . $q($L['disarmLbl']) . '"| DZ["📢 ' . $q($L['msgDisarmed']) . '"]:::done' . "\n";
 $mm .= '  W -->|"' . $q($L['timeout']) . '"| AL(["⚠ ' . $q($L['alarm']) . '"]):::al' . "\n";
 $mm .= '  AL --> MAL["📢 ' . $q($L['msgAlarm']) . '"]:::msg' . "\n";
-$mm .= '  AL --> C{"📞 ' . $q($L['call']) . '"}:::dec' . "\n";
-$mm .= '  C -->|"' . $q($L['repeat']) . '"| AL' . "\n";
+$mm .= '  MAL --> C["📞 ' . $q($L['call']) . '"]:::act' . "\n";
 $mm .= '  C --> ANS{"' . $q($L['answered']) . '"}:::dec' . "\n";
-$mm .= '  ANS -->|"' . $q($L['no']) . '"| C' . "\n";
 $mm .= '  ANS -->|"' . $q($L['yes']) . '"| PR["📢 ' . $q($L['prompt']) . '"]:::msg' . "\n";
 $mm .= '  PR --> K{"' . $q($L['key']) . '"}:::dec' . "\n";
-$mm .= '  K -->|"' . $q($L['hangup']) . '"| C' . "\n";
 $mm .= '  K -->|"' . $q($L['yes']) . '"| ACK["✅ ' . $q($L['ack']) . '"]:::act' . "\n";
 $mm .= '  ACK --> MACK["📢 ' . $q($L['msgAck']) . '"]:::msg' . "\n";
 $mm .= '  MACK --> P["🏁 ' . $q($L['post']) . '"]:::done' . "\n";
-$mm .= '  DZ["📢 ' . $q($L['msgDisarmed']) . '"]:::msg --> P' . "\n";
+$mm .= '  ANS -->|"' . $q($L['no']) . '"| REP["🔁 ' . $q($L['repeatNode']) . '"]:::al' . "\n";
+$mm .= '  K -->|"' . $q($L['hangup']) . '"| REP' . "\n";
+$mm .= '  REP --> AL' . "\n";
 $mm .= "  classDef msg fill:#d9edf7,stroke:#31708f,color:#222;\n";
 $mm .= "  classDef dec fill:#fcf8e3,stroke:#8a6d3b,color:#222;\n";
 $mm .= "  classDef al fill:#f2dede,stroke:#a94442,color:#222;\n";
 $mm .= "  classDef act fill:#dff0d8,stroke:#3c763d,color:#222;\n";
-$mm .= "  classDef done fill:#eee,stroke:#999,color:#222;\n";
+$mm .= "  classDef done fill:#dff0d8,stroke:#3c763d,color:#222;\n";
 ?>
 <div id="toolbar-flow" style="margin-bottom:12px">
 	<a href="config.php?display=loneworker" class="btn btn-default"><i class="fa fa-dashboard"></i> <?php echo _('Dashboard') ?></a>

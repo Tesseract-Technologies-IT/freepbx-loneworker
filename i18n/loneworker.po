@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: loneworker 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-22 09:30+0200\n"
+"POT-Creation-Date: 2026-06-22 09:42+0200\n"
 "PO-Revision-Date: 2026-06-18 15:13+0200\n"
 "Last-Translator: Tesseract Technologies\n"
 "Language-Team: Italian\n"
@@ -266,17 +266,17 @@ msgstr "Prova"
 msgid "Error"
 msgstr "Errore"
 
-#: views/dashboard.php:14 views/events.php:22 views/flow.php:60
+#: views/dashboard.php:14 views/events.php:22 views/flow.php:57
 #: views/grid.php:31 views/history.php:12 views/settings.php:70
 msgid "Dashboard"
 msgstr "Dashboard"
 
-#: views/dashboard.php:15 views/events.php:23 views/flow.php:61
+#: views/dashboard.php:15 views/events.php:23 views/flow.php:58
 #: views/grid.php:32 views/history.php:13 views/settings.php:71
 msgid "Active sessions"
 msgstr "Sessioni attive"
 
-#: views/dashboard.php:16 views/events.php:24 views/flow.php:62
+#: views/dashboard.php:16 views/events.php:24 views/flow.php:59
 #: views/grid.php:33 views/history.php:14 views/settings.php:72
 msgid "Session log"
 msgstr "Registro sessioni"
@@ -286,13 +286,13 @@ msgstr "Registro sessioni"
 msgid "Event history"
 msgstr "Storico eventi"
 
-#: views/dashboard.php:18 views/events.php:26 views/flow.php:63
+#: views/dashboard.php:18 views/events.php:26 views/flow.php:60
 #: views/grid.php:35 views/history.php:16 views/settings.php:74
 msgid "Alarm flow"
 msgstr "Diagramma allarme"
 
 # ---- grid ----
-#: views/dashboard.php:19 views/events.php:27 views/flow.php:64
+#: views/dashboard.php:19 views/events.php:27 views/flow.php:61
 #: views/grid.php:36 views/history.php:17 views/settings.php:75
 msgid "Settings"
 msgstr "Impostazioni"
@@ -388,7 +388,7 @@ msgstr "Per operatore"
 msgid "ARMED"
 msgstr "ARMATO"
 
-#: views/dashboard.php:115 views/flow.php:19 views/grid.php:8
+#: views/dashboard.php:115 views/flow.php:18 views/grid.php:8
 #: views/history.php:55
 msgid "ALARM"
 msgstr "ALLARME"
@@ -491,136 +491,132 @@ msgstr "Diffusori: uomo a terra attivato per l'interno N"
 
 #: views/flow.php:14
 #, php-format
-msgid "Check-in (%s) within %d min?"
-msgstr "Conferma (%s) entro %d min?"
+msgid "Check-in (%1$s) within %2$d min? (periodic reminders meanwhile)"
+msgstr "Conferma (%1$s) entro %2$d min? (nel frattempo promemoria periodici)"
 
 #: views/flow.php:15
-msgid "reminders"
-msgstr "promemoria"
+msgid "Speakers: presence confirmed — back to monitoring (timer reset)"
+msgstr "Diffusori: presenza confermata — torna in attesa (timer azzerato)"
 
 #: views/flow.php:16
-msgid "Speakers: presence confirmed"
-msgstr "Diffusori: presenza confermata"
-
-#: views/flow.php:17
 #, php-format
 msgid "Disarm (%s)"
 msgstr "Disarma (%s)"
 
-#: views/flow.php:18
-msgid "Speakers: system disarmed"
-msgstr "Diffusori: sistema disattivato"
+#: views/flow.php:17
+msgid "Speakers: system disarmed — session closed"
+msgstr "Diffusori: sistema disattivato — sessione chiusa"
 
-#: views/flow.php:20
+#: views/flow.php:19
 msgid "Speakers: extension N did not confirm"
 msgstr "Diffusori: l'interno N non ha confermato"
 
-#: views/flow.php:21
+#: views/flow.php:20
 #, php-format
 msgid "Call responders (%s)"
 msgstr "Chiama soccorritori (%s)"
 
-#: views/flow.php:22
-#, php-format
-msgid "nobody confirms: repeat every %ds"
-msgstr "nessuno conferma: ripete ogni %ds"
-
-#: views/flow.php:23
+#: views/flow.php:21
 msgid "A responder answers?"
 msgstr "Un soccorritore risponde?"
 
-#: views/flow.php:24
+#: views/flow.php:22
 #, php-format
 msgid "To the responder: press %s to take charge"
 msgstr "Al soccorritore: premi %s per prendere in carico"
 
-#: views/flow.php:25
+#: views/flow.php:23
 #, php-format
-msgid "Presses %s within %ds?"
-msgstr "Preme %s entro %ds?"
+msgid "Presses %1$s within %2$ds?"
+msgstr "Preme %1$s entro %2$ds?"
 
-#: views/flow.php:26
+#: views/flow.php:24
 msgid "Takes charge — all other calls stop"
 msgstr "Prende in carico — tutte le altre chiamate si fermano"
 
-#: views/flow.php:27
+#: views/flow.php:25
 msgid "Speakers: alarm taken charge of"
 msgstr "Diffusori: allarme preso in carico"
 
-#: views/flow.php:29
+#: views/flow.php:27
+#, php-format
+msgid "Nobody takes charge — repeat announcement + calls every %ds"
+msgstr "Nessuno prende in carico — ripete annuncio + chiamate ogni %ds"
+
+#: views/flow.php:28
 msgid "yes"
 msgstr "sì"
 
-#: views/flow.php:29
+#: views/flow.php:28
+msgid "no: timed out"
+msgstr "no: tempo scaduto"
+
+#: views/flow.php:28
+msgid "no answer"
+msgstr "nessuna risposta"
+
+#: views/flow.php:28
 msgid "no"
 msgstr "no"
 
-#: views/flow.php:29
-msgid "no: timeout"
-msgstr "no: timeout"
-
-#: views/flow.php:29
-msgid "no / hang up"
-msgstr "no / riaggancia"
-
-#: views/flow.php:67
+#: views/flow.php:64
 msgid "Complete alarm flow generated from the current configuration — every branch (check-in, answered, key pressed, nobody confirms, disarm) and every spoken message (📢). Update it by changing the Settings."
 msgstr "Flusso completo dell'allarme generato dalla configurazione attuale — ogni ramo (conferma, risposta, tasto premuto, nessuno conferma, disarmo) e ogni messaggio vocale (📢). Si aggiorna modificando le Impostazioni."
 
-#: views/flow.php:72
+#: views/flow.php:69
 msgid "(Diagram could not be rendered here — use the source below.)"
 msgstr "(Impossibile disegnare il diagramma qui — usa il sorgente qui sotto.)"
 
-#: views/flow.php:78
+#: views/flow.php:75
 #, php-format
 msgid "Responders, in call order — %s"
 msgstr "Soccorritori, in ordine di chiamata — %s"
 
-#: views/flow.php:81
+#: views/flow.php:78
 msgid "No responders configured — nobody is called!"
 msgstr "Nessun soccorritore configurato — non viene chiamato nessuno!"
 
-#: views/flow.php:88
+#: views/flow.php:85
 msgid "internal"
 msgstr "interno"
 
-#: views/flow.php:90
+#: views/flow.php:87
 msgid "external — NO outbound route!"
 msgstr "esterno — NESSUNA outbound route!"
 
-#: views/flow.php:91
+#: views/flow.php:88
 msgid "external — route filtered by Caller ID"
 msgstr "esterno — route filtrata per Caller ID"
 
-#: views/flow.php:92
+#: views/flow.php:89
 #, php-format
 msgid "external — route \"%s\", trunk disabled"
 msgstr "esterno — route \"%s\", trunk disabilitato"
 
-#: views/flow.php:93
+#: views/flow.php:90
 #, php-format
 msgid "external — via route \"%s\""
 msgstr "esterno — tramite route \"%s\""
 
-#: views/flow.php:99
+#: views/flow.php:96
 #, php-format
 msgid "External calls present Caller ID: %s"
 msgstr "Le chiamate esterne presentano il Caller ID: %s"
 
-#: views/flow.php:100
+#: views/flow.php:97
 msgid "the down worker's extension (may be rejected)"
 msgstr "l'interno dell'operatore caduto (potrebbe essere rifiutato)"
 
-#: views/flow.php:104
+#: views/flow.php:101
 #, php-format
 msgid "Speakers: paging group %s · take-charge key: %s · ring %ds · repeat every %ds"
 msgstr "Diffusori: paging group %s · tasto di presa in carico: %s · squillo %ds · ripete ogni %ds"
 
-#: views/flow.php:105
+#: views/flow.php:102
 msgid "NOT SET"
 msgstr "NON IMPOSTATO"
 
-#: views/flow.php:112
+#: views/flow.php:109
 msgid "Diagram source (Mermaid) — for export"
 msgstr "Sorgente diagramma (Mermaid) — per export"
 
@@ -1450,15 +1446,5 @@ msgstr "Il numero di conferma viene pronunciato automaticamente qui (SayDigits),
 #: views/settings.php:463
 msgid "Play on speakers"
 msgstr "Riproduci sugli altoparlanti"
-
-#, php-format
-
-#, php-format
-
-#, php-format
-
-#, php-format
-
-#, php-format
 
 #, php-format
