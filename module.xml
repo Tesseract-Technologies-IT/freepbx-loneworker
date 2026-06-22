@@ -2,11 +2,12 @@
 	<rawname>loneworker</rawname>
 	<repo>local</repo>
 	<name>Lone Worker</name>
-	<version>1.0.16</version>
+	<version>1.0.17</version>
 	<publisher>Tesseract Technologies</publisher>
 	<license>GPLv3+</license>
 	<licenselink>http://www.gnu.org/licenses/gpl-3.0.txt</licenselink>
 	<changelog>
+		*1.0.17* When a responder presses the take-charge key they now hear a spoken confirmation ("the alarm of extension N has been taken charge of") instead of just a beep. The take-charge prompt is repeated to a responder who does not press the key, and the number of repeats is now configurable (Settings → "Prompt repeats", 1-10, default 3) instead of the previous fixed 3.
 		*1.0.16* "Test alarm call" now presents a real Caller ID (an internal responder or service extension) instead of the placeholder '000', which carriers reject — so the test reaches external numbers even with no alarm Caller ID configured, matching the live alarm (which already presents the down worker's real extension).
 		*1.0.15* Test status now counts logical calls instead of raw channel legs: a Local channel has two halves and the alarm test uses an extra orchestration channel, so "Test announcement" showed 2 and "Test alarm call" showed 4 — now they show the real count (1 announcement, N responders).
 		*1.0.14* Simplify the Alarm flow diagram: cleaner top-down layout with a single loop-back (the repeat), no self-loops or crossing back-edges, clearer outcomes — much easier to read.

@@ -188,7 +188,7 @@ $gHold     = ($s['confirm_action'] === 'hold');
 	<ul style="line-height:1.8">
 		<li><?php echo _('When the countdown reaches zero, the speakers announce: "Extension N did not confirm — check the operator immediately."') ?></li>
 		<li><?php echo sprintf(_('The configured responders are then called %1$s (%2$d configured).'), $gMode, count($gMembers)) ?></li>
-		<li><?php echo sprintf(_('Whoever answers hears: "Lone worker alarm, the operator of extension N did not confirm — press %1$s to take charge." They have %2$d seconds to press %1$s (the prompt repeats up to 3 times). Pressing %1$s takes charge: every other call stops immediately.'), $gKey, (int) $s['confirm_timeout']) ?></li>
+		<li><?php echo sprintf(_('Whoever answers hears: "Lone worker alarm, the operator of extension N did not confirm — press %1$s to take charge." They have %2$d seconds to press %1$s (the prompt repeats up to %3$d times). Pressing %1$s takes charge: the responder hears a spoken confirmation ("the alarm of extension N has been taken charge of") and every other call stops immediately.'), $gKey, (int) $s['confirm_timeout'], (int) $s['confirm_repeat']) ?></li>
 		<li><?php echo $gHold
 			? _('Once taken charge of, the session is kept as "TAKEN CHARGE" (no more calls or announcements) until an operator disarms it manually.')
 			: _('Once taken charge of, the session is closed (incident over).'); ?>
@@ -307,7 +307,8 @@ lw_num(_('Repeat alarm every (seconds)'), 'alarm_repeat', $s['alarm_repeat'], _(
 </div></div></div></div>
 <div class="row"><div class="col-md-12"><span class="help-block fpbx-help-block"><?php echo _('The DTMF key a responder presses on their phone to take charge of the alarm (which stops all the other calls). Default 1.') ?></span></div></div></div>
 <?php
-lw_num(_('Confirmation timeout (seconds)'), 'confirm_timeout', $s['confirm_timeout'], _('How long a responder has to press the key after each prompt. The prompt is repeated up to 3 times. Default 15.'));
+lw_num(_('Confirmation timeout (seconds)'), 'confirm_timeout', $s['confirm_timeout'], _('How long a responder has to press the key after each prompt. Default 15.'));
+lw_num(_('Prompt repeats'), 'confirm_repeat', $s['confirm_repeat'], _('How many times the "press the key to take charge" prompt is repeated to a responder who does not press the key. After the last repeat the call is dropped (the cascade moves on). Range 1-10, default 3.'));
 ?>
 <div class="element-container"><div class="row"><div class="col-md-12"><div class="row"><div class="form-group">
 	<div class="col-md-4"><label class="control-label" for="confirm_action"><?php echo _('After the alarm is confirmed') ?></label></div>

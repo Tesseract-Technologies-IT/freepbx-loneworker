@@ -145,6 +145,9 @@ function loneworker_get_config($engine) {
 	$cpost = loneworker_default('call-post');
 	$ckey  = preg_match('/^[0-9*]$/', (string) ($s['confirm_key'] ?? '1')) ? (string) $s['confirm_key'] : '1'; // key to take charge
 	$ctmo  = max(3, (int) ($s['confirm_timeout'] ?? 15)); // seconds to wait for the key on each prompt
+	$crep  = max(1, min(10, (int) ($s['confirm_repeat'] ?? 3))); // times the prompt repeats if the key is not pressed
+	$apre  = loneworker_default('ack-pre');   // "taken charge" confirmation played back to the responder
+	$apost = loneworker_default('ack-post');
 	$ext->add($cf, 's', '', new ext_answer(''));
 	$ext->add($cf, 's', '', new ext_setvar('CHANNEL(language)', $lang));
 	// the responder we reached = the dialled number, parsed from the channel name (Local/<num>@from-internal-...)
@@ -162,9 +165,15 @@ function loneworker_get_config($engine) {
 	if (ctype_digit($ckey)) { $ext->add($cf, 's', '', new ext_saydigits($ckey)); }
 	$ext->add($cf, 's', '', new ext_read('LWKEY', '', '1', '', '1', (string) $ctmo));
 	$ext->add($cf, 's', '', new ext_gotoif('$["${LWKEY}" = "' . $ckey . '"]', 's,take'));
-	$ext->add($cf, 's', '', new ext_gotoif('$[${LWTRY} < 3]', 's,loop'));
+	// not confirmed yet: repeat the whole prompt up to confirm_repeat times, then hang up
+	$ext->add($cf, 's', '', new ext_gotoif('$[${LWTRY} < ' . $crep . ']', 's,loop'));
 	$ext->add($cf, 's', '', new ext_hangup(''));
+	// confirmed: acknowledge, then play a spoken confirmation back to the responder
 	$ext->add($cf, 's', 'take', new ext_agi($agi . ',ack,${LWEXT},${LWRESP}'));
 	$ext->add($cf, 's', '', new ext_playback('beep'));
+	if ($apre !== '') { $ext->add($cf, 's', '', new ext_playback($apre)); } // "the alarm of extension"
+	$ext->add($cf, 's', '', new ext_saydigits('${LWEXT}'));                  // ... N ...
+	if ($apost !== '') { $ext->add($cf, 's', '', new ext_playback($apost)); } // "... has been taken charge of"
+	$ext->add($cf, 's', '', new ext_wait('1'));
 	$ext->add($cf, 's', '', new ext_return(''));
 }

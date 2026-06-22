@@ -29,6 +29,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		'alarm_repeat'           => 120,    // how often to repeat the alarm until taken charge of
 		'confirm_key'            => '1',    // DTMF key the responder presses to take charge (0-9 or *)
 		'confirm_timeout'        => 15,     // seconds to wait for the key on each prompt
+		'confirm_repeat'         => 3,      // how many times the take-charge prompt is repeated to a responder who does not press the key
 		'confirm_action'         => 'disarm', // after a responder confirms: 'disarm' (close) | 'hold' (keep as acknowledged until manual disarm)
 		'confirm_announce'       => 1,      // play the "taken charge" announcement on the speakers after confirmation
 		'digit_language'         => 'it',   // language SayDigits uses to speak the extension and numbers
@@ -157,6 +158,7 @@ class Loneworker extends \FreePBX_Helpers implements \BMO {
 		// validate responder-confirmation settings
 		$clean['confirm_key'] = preg_match('/^[0-9*]$/', (string) $clean['confirm_key']) ? (string) $clean['confirm_key'] : '1';
 		$clean['confirm_timeout'] = max(3, min(120, (int) $clean['confirm_timeout']));
+		$clean['confirm_repeat'] = max(1, min(10, (int) $clean['confirm_repeat']));
 		$clean['confirm_action'] = in_array($clean['confirm_action'], ['disarm', 'hold'], true) ? $clean['confirm_action'] : 'disarm';
 		$clean['confirm_announce'] = !empty($clean['confirm_announce']) ? 1 : 0;
 		$this->setConfig('settings', $clean);
