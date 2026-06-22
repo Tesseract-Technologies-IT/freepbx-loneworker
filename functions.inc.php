@@ -146,34 +146,49 @@ function loneworker_get_config($engine) {
 	$ckey  = preg_match('/^[0-9*]$/', (string) ($s['confirm_key'] ?? '1')) ? (string) $s['confirm_key'] : '1'; // key to take charge
 	$ctmo  = max(3, (int) ($s['confirm_timeout'] ?? 15)); // seconds to wait for the key on each prompt
 	$crep  = max(1, min(10, (int) ($s['confirm_repeat'] ?? 3))); // times the prompt repeats if the key is not pressed
-	$apre  = loneworker_default('ack-pre');   // "taken charge" confirmation played back to the responder
+	$apre  = loneworker_default('ack-pre');   // speaker "taken charge" announcement (fallback only)
 	$apost = loneworker_default('ack-post');
+	// Responder-specific take-charge confirmation (deliberately DIFFERENT wording from the speakers):
+	// "you have taken charge of the alarm of extension N". Falls back to the speaker audio if the
+	// dedicated clips are not installed.
+	$tpre  = loneworker_default('taken-pre');
+	$tpost = loneworker_default('taken-post');
+	$rcpre  = $tpre !== '' ? $tpre : $apre;
+	$rcpost = $tpost !== '' ? $tpost : $apost;
+	$keyfile = ctype_digit($ckey) ? 'digits/' . $ckey : ''; // spoken key as an interruptible digit file
 	$ext->add($cf, 's', '', new ext_answer(''));
 	$ext->add($cf, 's', '', new ext_setvar('CHANNEL(language)', $lang));
 	// the responder we reached = the dialled number, parsed from the channel name (Local/<num>@from-internal-...)
 	$ext->add($cf, 's', '', new ext_setvar('LWRESP', '${CUT(CUT(CHANNEL,@,1),/,2)}'));
 	$ext->add($cf, 's', '', new ext_agi($agi . ',answered,${LWEXT},${LWRESP}')); // call log: who answered
+	// Render the down-worker extension as individual digit sound files (digits/0..9) so the WHOLE
+	// prompt can be played as a single, interruptible Read — the responder can press the key at ANY
+	// moment while it is still speaking, not only during the silent wait. SayDigits cannot be
+	// interrupted, so it is not used in the prompt anymore. NF becomes e.g. "&digits/1&digits/0".
+	$ext->add($cf, 's', '', new ext_setvar('NF', ''));
+	for ($i = 0; $i < 6; $i++) {
+		$ext->add($cf, 's', '', new ext_execif('$[${LEN(${LWEXT})} > ' . $i . ']', 'Set', 'NF=${NF}&digits/${LWEXT:' . $i . ':1}'));
+	}
+	// Build the &-joined, interruptible prompt: pre sentence + extension digits + post sentence + key digit.
+	$ext->add($cf, 's', '', new ext_setvar('LWPROMPT', ($cpre !== '' ? $cpre : '') . '${NF}'));
+	if ($cpost !== '')   { $ext->add($cf, 's', '', new ext_setvar('LWPROMPT', '${LWPROMPT}&' . $cpost)); }
+	if ($keyfile !== '') { $ext->add($cf, 's', '', new ext_setvar('LWPROMPT', '${LWPROMPT}&' . $keyfile)); }
 	$ext->add($cf, 's', '', new ext_setvar('LWTRY', '0'));
 	$ext->add($cf, 's', '', new ext_wait('1'));
 	$ext->add($cf, 's', 'loop', new ext_setvar('LWTRY', '$[${LWTRY} + 1]'));
-	if ($cpre !== '') { $ext->add($cf, 's', '', new ext_playback($cpre)); }
-	else              { $ext->add($cf, 's', '', new ext_noop('LW confirm ext=${LWEXT}')); }
-	$ext->add($cf, 's', '', new ext_saydigits('${LWEXT}'));
-	if ($cpost !== '') { $ext->add($cf, 's', '', new ext_playback($cpost)); }
-	// Speak the configured confirm key dynamically (so the prompt is always correct, whatever the
-	// "Key to take charge" setting is) — instead of baking the digit into the recorded audio.
-	if (ctype_digit($ckey)) { $ext->add($cf, 's', '', new ext_saydigits($ckey)); }
-	$ext->add($cf, 's', '', new ext_read('LWKEY', '', '1', '', '1', (string) $ctmo));
+	// Interruptible prompt: a DTMF pressed at ANY point during playback is captured immediately
+	// (Read stops the prompt on the first digit), then we wait up to confirm_timeout for it.
+	$ext->add($cf, 's', '', new ext_read('LWKEY', '${LWPROMPT}', '1', '', '1', (string) $ctmo));
 	$ext->add($cf, 's', '', new ext_gotoif('$["${LWKEY}" = "' . $ckey . '"]', 's,take'));
 	// not confirmed yet: repeat the whole prompt up to confirm_repeat times, then hang up
 	$ext->add($cf, 's', '', new ext_gotoif('$[${LWTRY} < ' . $crep . ']', 's,loop'));
 	$ext->add($cf, 's', '', new ext_hangup(''));
-	// confirmed: acknowledge, then play a spoken confirmation back to the responder
+	// confirmed: acknowledge, then play the RESPONDER-specific confirmation (distinct from the speakers)
 	$ext->add($cf, 's', 'take', new ext_agi($agi . ',ack,${LWEXT},${LWRESP}'));
 	$ext->add($cf, 's', '', new ext_playback('beep'));
-	if ($apre !== '') { $ext->add($cf, 's', '', new ext_playback($apre)); } // "the alarm of extension"
-	$ext->add($cf, 's', '', new ext_saydigits('${LWEXT}'));                  // ... N ...
-	if ($apost !== '') { $ext->add($cf, 's', '', new ext_playback($apost)); } // "... has been taken charge of"
+	if ($rcpre !== '') { $ext->add($cf, 's', '', new ext_playback($rcpre)); } // "you have taken charge of the alarm of extension"
+	$ext->add($cf, 's', '', new ext_saydigits('${LWEXT}'));                    // ... N ...
+	if ($rcpost !== '') { $ext->add($cf, 's', '', new ext_playback($rcpost)); } // "... good response/intervention."
 	$ext->add($cf, 's', '', new ext_wait('1'));
 	$ext->add($cf, 's', '', new ext_return(''));
 }
