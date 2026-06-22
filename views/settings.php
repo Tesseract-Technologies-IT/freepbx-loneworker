@@ -433,7 +433,7 @@ $groups = [
 		'post' => null],
 	['title' => _('Emergency call — played to the responders during the alarm'), 'aud' => 'phone', 'msg' => 'call',
 		'pre' => _('Lone worker alarm. The operator of extension'),
-		'post' => _('did not confirm. Press one to take charge of the alarm.')],
+		'post' => _('did not confirm. To take charge of the alarm, press the key (the system speaks the configured key here).')],
 ];
 
 $audienceHtml = function ($aud) {

@@ -181,10 +181,11 @@ system speaks the extension number (e.g. "3-0-1") between the two parts; the Set
 | **Alarm (speakers)** | "Lone worker alarm. Extension" « N » "did not confirm. Check the operator immediately. Emergency calls have been started." |
 | **Acknowledged** | "Lone worker alarm taken charge of for extension" « N » "A responder is checking the situation on site." |
 | **Disarmed** | "Lone worker system disarmed for extension" « N » (no second part) |
-| **Emergency call** | "Lone worker alarm. The operator of extension" « N » "did not confirm. Press one to take charge of the alarm." |
+| **Emergency call** | "Lone worker alarm. The operator of extension" « N » "did not confirm. To take charge of the alarm, press the key" « confirm key » |
 
-The « check-in code » is **not part of the audio**: it is spoken dynamically with SayDigits from the
-current Check-in feature code, so changing the code updates the announcement automatically.
+The « check-in code » and the « confirm key » are **not part of the audio**: they are spoken
+dynamically with SayDigits from the current Check-in feature code and the configured take-charge key,
+so changing either updates the announcement automatically (no re-recording needed).
 
 ## Architecture (all native FreePBX)
 

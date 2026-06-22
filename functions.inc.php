@@ -157,6 +157,9 @@ function loneworker_get_config($engine) {
 	else              { $ext->add($cf, 's', '', new ext_noop('LW confirm ext=${LWEXT}')); }
 	$ext->add($cf, 's', '', new ext_saydigits('${LWEXT}'));
 	if ($cpost !== '') { $ext->add($cf, 's', '', new ext_playback($cpost)); }
+	// Speak the configured confirm key dynamically (so the prompt is always correct, whatever the
+	// "Key to take charge" setting is) — instead of baking the digit into the recorded audio.
+	if (ctype_digit($ckey)) { $ext->add($cf, 's', '', new ext_saydigits($ckey)); }
 	$ext->add($cf, 's', '', new ext_read('LWKEY', '', '1', '', '1', (string) $ctmo));
 	$ext->add($cf, 's', '', new ext_gotoif('$["${LWKEY}" = "' . $ckey . '"]', 's,take'));
 	$ext->add($cf, 's', '', new ext_gotoif('$[${LWTRY} < 3]', 's,loop'));

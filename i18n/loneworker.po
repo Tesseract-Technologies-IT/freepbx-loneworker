@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: loneworker 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-19 12:21+0200\n"
+"POT-Creation-Date: 2026-06-22 09:04+0200\n"
 "PO-Revision-Date: 2026-06-18 15:13+0200\n"
 "Last-Translator: Tesseract Technologies\n"
 "Language-Team: Italian\n"
@@ -13,173 +13,173 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 # ---- feature code labels ----
-#: Loneworker.class.php:51
+#: Loneworker.class.php:73
 msgid "Lone Worker: Arm"
 msgstr "Uomo a Terra: Arma"
 
-#: Loneworker.class.php:51
+#: Loneworker.class.php:73
 msgid "Lone Worker: Check-in"
 msgstr "Uomo a Terra: Conferma presenza"
 
-#: Loneworker.class.php:51
+#: Loneworker.class.php:73
 msgid "Lone Worker: Disarm"
 msgstr "Uomo a Terra: Disarma"
 
 # ---- feature code conflict detection ----
-#: Loneworker.class.php:164
+#: Loneworker.class.php:189
 #, php-format
 msgid "extension %s (%s)"
 msgstr "interno %s (%s)"
 
-#: Loneworker.class.php:172
+#: Loneworker.class.php:197
 #, php-format
 msgid "feature code %s/%s"
 msgstr "feature code %s/%s"
 
-#: Loneworker.class.php:182 views/settings.php:222
+#: Loneworker.class.php:207 views/settings.php:222
 msgid "Arm code"
 msgstr "Codice di armamento"
 
-#: Loneworker.class.php:182 views/settings.php:223
+#: Loneworker.class.php:207 views/settings.php:223
 msgid "Check-in code"
 msgstr "Codice di conferma"
 
-#: Loneworker.class.php:182 views/settings.php:224
+#: Loneworker.class.php:207 views/settings.php:224
 msgid "Disarm code"
 msgstr "Codice di disarmo"
 
-#: Loneworker.class.php:189
+#: Loneworker.class.php:214
 #, php-format
 msgid "%s is the same as the %s"
 msgstr "%s è uguale al %s"
 
-#: Loneworker.class.php:191
+#: Loneworker.class.php:216
 #, php-format
 msgid "%s is already used by %s"
 msgstr "%s è già usato da %s"
 
-#: Loneworker.class.php:221
+#: Loneworker.class.php:246
 msgid "Lone Worker: some feature codes were not applied (conflict)"
 msgstr "Uomo a Terra: alcuni feature code non sono stati applicati (conflitto)"
 
-#: Loneworker.class.php:738
+#: Loneworker.class.php:763
 msgid "No paging group set: announcements on the speakers will not play."
 msgstr "Nessun paging group impostato: gli annunci sulle casse non verranno riprodotti."
 
-#: Loneworker.class.php:742
+#: Loneworker.class.php:767
 #, php-format
 msgid "Paging group %s exists."
 msgstr "Il paging group %s esiste."
 
-#: Loneworker.class.php:742
+#: Loneworker.class.php:767
 #, php-format
 msgid "Paging group %s does not exist."
 msgstr "Il paging group %s non esiste."
 
-#: Loneworker.class.php:747
+#: Loneworker.class.php:772
 msgid "in sequence"
 msgstr "in sequenza"
 
-#: Loneworker.class.php:747
+#: Loneworker.class.php:772
 msgid "all at once"
 msgstr "tutti insieme"
 
-#: Loneworker.class.php:748
+#: Loneworker.class.php:773
 msgid "No alarm responders configured (internal or external)."
 msgstr "Nessun soccorritore configurato (interno o esterno)."
 
-#: Loneworker.class.php:749
+#: Loneworker.class.php:774
 #, php-format
 msgid "%d alarm responder(s) configured, called %s."
 msgstr "%d soccorritore/i configurato/i, chiamati %s."
 
-#: Loneworker.class.php:760
+#: Loneworker.class.php:785
 msgid "There are external responder numbers but no outbound routes exist: the alarm cannot call them."
 msgstr "Ci sono numeri esterni ma non esistono outbound route: l'allarme non può chiamarli."
 
-#: Loneworker.class.php:764
+#: Loneworker.class.php:789
 #, php-format
 msgid "No enabled outbound route matches external number %s."
 msgstr "Nessuna outbound route abilitata corrisponde al numero esterno %s."
 
-#: Loneworker.class.php:765
+#: Loneworker.class.php:790
 #, php-format
 msgid "External number %s only matches a route filtered by Caller ID; the alarm Caller ID may not pass it."
 msgstr "Il numero esterno %s corrisponde solo a una route filtrata per Caller ID; il Caller ID dell'allarme potrebbe non superarla."
 
-#: Loneworker.class.php:766
+#: Loneworker.class.php:791
 #, php-format
 msgid "External number %s matches route \"%s\" but its trunk is disabled."
 msgstr "Il numero esterno %s corrisponde alla route \"%s\" ma il suo trunk è disabilitato."
 
-#: Loneworker.class.php:767
+#: Loneworker.class.php:792
 #, php-format
 msgid "External number %s will route out via \"%s\"."
 msgstr "Il numero esterno %s uscirà tramite \"%s\"."
 
-#: Loneworker.class.php:771
+#: Loneworker.class.php:796
 #, php-format
 msgid "External calls will present Caller ID %s."
 msgstr "Le chiamate esterne presenteranno il Caller ID %s."
 
-#: Loneworker.class.php:774
+#: Loneworker.class.php:799
 msgid "No alarm Caller ID set: external calls go out as the down worker extension. If the trunk/route has no outbound CID, the carrier may receive an internal number. Set a service extension or an explicit Caller ID."
 msgstr "Nessun Caller ID d'allarme impostato: le chiamate esterne escono come l'interno dell'operatore caduto. Se trunk/route non hanno un outbound CID, l'operatore telefonico potrebbe ricevere un numero interno. Imposta un interno di servizio o un Caller ID esplicito."
 
-#: Loneworker.class.php:777
+#: Loneworker.class.php:802
 #, php-format
 msgid "Service extension %s has no outbound Caller ID: the carrier may receive an internal number. Set its Outbound CID or an explicit Caller ID."
 msgstr "L'interno di servizio %s non ha un outbound Caller ID: l'operatore telefonico potrebbe ricevere un numero interno. Imposta il suo Outbound CID o un Caller ID esplicito."
 
-#: Loneworker.class.php:778
+#: Loneworker.class.php:803
 #, php-format
 msgid "External calls will use the outbound Caller ID of extension %s (%s)."
 msgstr "Le chiamate esterne useranno l'outbound Caller ID dell'interno %s (%s)."
 
-#: Loneworker.class.php:789
+#: Loneworker.class.php:814
 #, php-format
 msgid "Built-in announcement audio is missing (%s): reinstall the module."
 msgstr "Audio degli annunci integrato mancante (%s): reinstalla il modulo."
 
-#: Loneworker.class.php:790
+#: Loneworker.class.php:815
 msgid "Built-in announcement audio is installed."
 msgstr "Audio degli annunci integrato installato."
 
-#: Loneworker.class.php:794
+#: Loneworker.class.php:819
 #, php-format
 msgid "Feature code \"%s\" is not active."
 msgstr "Il feature code \"%s\" non è attivo."
 
-#: Loneworker.class.php:800
+#: Loneworker.class.php:825
 msgid "Asterisk Manager (AMI) reachable."
 msgstr "Asterisk Manager (AMI) raggiungibile."
 
-#: Loneworker.class.php:800
+#: Loneworker.class.php:825
 msgid "Asterisk Manager (AMI) not reachable: announcements and calls will fail."
 msgstr "Asterisk Manager (AMI) non raggiungibile: annunci e chiamate falliranno."
 
-#: Loneworker.class.php:804
+#: Loneworker.class.php:829
 msgid "Monitoring job is registered."
 msgstr "Il job di monitoraggio è registrato."
 
-#: Loneworker.class.php:804
+#: Loneworker.class.php:829
 msgid "Monitoring job is not registered."
 msgstr "Il job di monitoraggio non è registrato."
 
-#: Loneworker.class.php:808
+#: Loneworker.class.php:833
 msgid "First reminder is not before the timeout: reminders will not play."
 msgstr "Il primo promemoria non è prima del timeout: i promemoria non verranno riprodotti."
 
-#: Loneworker.class.php:809
+#: Loneworker.class.php:834
 msgid "Alarm repeat interval is shorter than the ring time: alarm rounds may overlap."
 msgstr "L'intervallo di ripetizione allarme è inferiore alla durata squillo: i giri d'allarme potrebbero sovrapporsi."
 
 # ---- action bar ----
-#: Loneworker.class.php:820
+#: Loneworker.class.php:845
 msgid "Reset"
 msgstr "Ripristina"
 
-#: Loneworker.class.php:821
+#: Loneworker.class.php:846
 msgid "Submit"
 msgstr "Salva"
 
@@ -1268,8 +1268,8 @@ msgid "Lone worker alarm. The operator of extension"
 msgstr "Allarme uomo a terra. L'operatore dell'interno"
 
 #: views/settings.php:436
-msgid "did not confirm. Press one to take charge of the alarm."
-msgstr "non ha confermato. Premi uno per prendere in carico l'allarme."
+msgid "did not confirm. To take charge of the alarm, press the key (the system speaks the configured key here)."
+msgstr "non ha confermato. Per prendere in carico l'allarme, premi il tasto (qui il sistema pronuncia il tasto configurato)."
 
 #: views/settings.php:442
 msgid "Heard on the responders' phones (the internal extensions and external numbers configured below) — only the person who answers the call hears this."
